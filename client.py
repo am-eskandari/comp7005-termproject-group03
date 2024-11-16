@@ -26,4 +26,5 @@ def udp_client(server_ip, server_port, timeout=2):
             print("Failed to receive acknowledgment after 3 attempts.")
 
 if __name__ == "__main__":
-    udp_client("127.0.0.1", 5000)
+    udp_client("127.0.0.1", 4000) # Proxy
+    # udp_client("127.0.0.1", 5000)
