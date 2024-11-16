@@ -1,6 +1,5 @@
 import socket
 
-
 def udp_server(listen_ip, listen_port):
     # Create a UDP socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -17,6 +16,8 @@ def udp_server(listen_ip, listen_port):
                 print(f"Received an empty message from {addr}")
             else:
                 print(f"Received message: {data.decode()} from {addr}")
+                # Send acknowledgment back to the client
+                server_socket.sendto(b"ACK", addr)
         except Exception as e:
             # Handle decoding errors or other unexpected exceptions
             print(f"Error while receiving message: {e}")
