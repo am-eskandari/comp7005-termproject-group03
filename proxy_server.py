@@ -1,83 +1,79 @@
 import socket
 import random
 import time
-
-import socket
-import random
-import time
+import argparse
 
 
-def udp_proxy(listen_ip, listen_port, server_ip, server_port, drop_chance=0.1, delay_chance=0.1, delay_time=0.2):
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="UDP Proxy Server")
+    parser.add_argument('--listen-ip', required=True, help="Proxy server IP address")
+    parser.add_argument('--listen-port', type=int, required=True, help="Proxy server port")
+    parser.add_argument('--target-ip', required=True, help="Target server IP address")
+    parser.add_argument('--target-port', type=int, required=True, help="Target server port")
+    parser.add_argument('--client-drop', type=float, default=0.0, help="Drop chance (0.0 to 1.0) for client-to-server")
+    parser.add_argument('--server-drop', type=float, default=0.0, help="Drop chance (0.0 to 1.0) for server-to-client")
+    parser.add_argument('--client-delay', type=float, default=0.0, help="Delay chance (0.0 to 1.0) for client-to-server")
+    parser.add_argument('--server-delay', type=float, default=0.0, help="Delay chance (0.0 to 1.0) for server-to-client")
+    parser.add_argument('--client-delay-time', type=float, default=0.0, help="Delay time for client-to-server (seconds)")
+    parser.add_argument('--server-delay-time', type=float, default=0.0, help="Delay time for server-to-client (seconds)")
+    return parser.parse_args()
+
+
+def udp_proxy(listen_ip, listen_port, server_ip, server_port,
+              client_drop=0.0, server_drop=0.0, client_delay=0.0,
+              server_delay=0.0, client_delay_time=0.0, server_delay_time=0.0):
     """
     A proxy server that forwards UDP packets with simulated unreliability.
-
-    Parameters:
-    - listen_ip: IP address for the proxy to listen on.
-    - listen_port: Port for the proxy to listen on.
-    - server_ip: IP address of the target server.
-    - server_port: Port of the target server.
-    - drop_chance: Probability (0.0 to 1.0) of dropping a packet.
-    - delay_chance: Probability (0.0 to 1.0) of delaying a packet.
-    - delay_time: Fixed delay time in seconds for delayed packets.
     """
     proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     proxy_socket.bind((listen_ip, listen_port))
     print(f"Proxy server listening on {listen_ip}:{listen_port}")
 
-    # Dictionary to map client addresses to server
-    client_to_server = {}
-    client_last_packet = {}  # Tracks the last packet from each client to manage retries
+    client_address = None  # To keep track of the client address
 
     while True:
         try:
-            # Receive data from either the client or server
+            # Receive data from client or server
             data, addr = proxy_socket.recvfrom(65507)
 
-            # If the packet is from a client
-            if addr not in client_to_server and addr != (server_ip, server_port):
-                client_to_server[addr] = (server_ip, server_port)
-                client_last_packet[addr] = data
-                print(f"Forwarding new packet from client {addr} to server {server_ip}:{server_port}")
-
-            # If it's a retry or duplicate from the client
-            elif addr in client_to_server:
-                if data == client_last_packet[addr]:
-                    print(f"Retry detected from client {addr}. Forwarding again to server {server_ip}:{server_port}")
-                else:
-                    client_last_packet[addr] = data
-                    print(f"Forwarding updated packet from client {addr} to server {server_ip}:{server_port}")
-
-            # If the packet is from the server
-            elif addr == (server_ip, server_port):
-                destination = next(client for client, server in client_to_server.items() if server == addr)
-                print(f"Forwarding packet from server {addr} to client {destination}")
-                proxy_socket.sendto(data, destination)
-                continue  # Skip further handling for server packets
-
+            # Identify if it's a client or server packet
+            if addr != (server_ip, server_port):
+                # Packet from the client
+                client_address = addr  # Save the client address
+                if random.random() < client_drop:
+                    print(f"Dropping packet from client {addr}")
+                    continue
+                if random.random() < client_delay:
+                    print(f"Delaying packet from client {addr} for {client_delay_time} seconds")
+                    time.sleep(client_delay_time)
+                destination = (server_ip, server_port)
+                print(f"Forwarding packet from client {addr} to server {destination}")
             else:
-                print(f"Unexpected packet from {addr}. Ignoring.")
-                continue
-
-            # Simulate packet loss
-            if random.random() < drop_chance:
-                print(f"Dropping packet from {addr}")
-                continue
-
-            # Simulate packet delay
-            if random.random() < delay_chance:
-                print(
-                    f"Delaying packet from {addr} to {client_to_server.get(addr, (server_ip, server_port))} for {delay_time} seconds")
-                time.sleep(delay_time)
+                # Packet from the server
+                if not client_address:
+                    print("No client address to forward to. Dropping packet.")
+                    continue
+                if random.random() < server_drop:
+                    print(f"Dropping packet from server {addr}")
+                    continue
+                if random.random() < server_delay:
+                    print(f"Delaying packet from server {addr} for {server_delay_time} seconds")
+                    time.sleep(server_delay_time)
+                destination = client_address
+                print(f"Forwarding packet from server {addr} to client {destination}")
 
             # Forward the packet
-            destination = client_to_server.get(addr, (server_ip, server_port))
             proxy_socket.sendto(data, destination)
 
         except Exception as e:
             print(f"Proxy server error: {e}")
 
 
+
 if __name__ == "__main__":
-    # Proxy listens on port 4000 and forwards to the server at 127.0.0.1:5000
-    # Drop chance: 10%, Delay chance: 10%, Delay time: 0.2 seconds
-    udp_proxy("127.0.0.1", 4000, "127.0.0.1", 5000, drop_chance=0.1, delay_chance=0.1, delay_time=0.2)
+    args = parse_arguments()
+    udp_proxy(
+        args.listen_ip, args.listen_port, args.target_ip, args.target_port,
+        args.client_drop, args.server_drop, args.client_delay, args.server_delay,
+        args.client_delay_time, args.server_delay_time
+    )

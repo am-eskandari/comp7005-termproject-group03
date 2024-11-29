@@ -1,4 +1,13 @@
 import socket
+import argparse
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="UDP Server")
+    parser.add_argument('--listen-ip', required=True, help="IP address to bind")
+    parser.add_argument('--listen-port', type=int, required=True, help="Port to listen on")
+    return parser.parse_args()
+
 
 def udp_server(listen_ip, listen_port):
     # Create a UDP socket
@@ -24,4 +33,5 @@ def udp_server(listen_ip, listen_port):
 
 
 if __name__ == "__main__":
-    udp_server("127.0.0.1", 5000)
+    args = parse_arguments()
+    udp_server(args.listen_ip, args.listen_port)

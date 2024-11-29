@@ -1,5 +1,15 @@
 import socket
 import time
+import argparse
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="UDP Client")
+    parser.add_argument('--target-ip', required=True, help="Server IP address")
+    parser.add_argument('--target-port', type=int, required=True, help="Server port")
+    parser.add_argument('--timeout', type=int, default=2, help="Acknowledgment timeout in seconds")
+    return parser.parse_args()
+
 
 def udp_client(server_ip, server_port, timeout=2):
     # Create a UDP socket
@@ -26,5 +36,5 @@ def udp_client(server_ip, server_port, timeout=2):
             print("Failed to receive acknowledgment after 3 attempts.")
 
 if __name__ == "__main__":
-    udp_client("127.0.0.1", 4000) # Proxy
-    # udp_client("127.0.0.1", 5000)
+    args = parse_arguments()
+    udp_client(args.target_ip, args.target_port, args.timeout)
