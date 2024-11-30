@@ -1,3 +1,7 @@
+Here's the updated README to align with the changes made in the CLI and how the delay time is now measured in milliseconds:
+
+---
+
 # Reliable Communication Protocol Using UDP
 
 This project implements a **reliable communication protocol** using UDP, addressing challenges like packet loss and delays. It includes:
@@ -12,7 +16,7 @@ The proxy server allows **dynamic parameter updates** via a dedicated **control 
 ## **Setup Instructions**
 
 ### **Prerequisites**
-- Operating System: **Arch Linux**
+- Tested on: **Arch Linux**, **Manjaro**, **Ubuntu**
 - Python version: **3.12 or higher**
 - Required libraries:
   - `socket`
@@ -53,7 +57,7 @@ python proxy_server.py --listen-ip <IP> --listen-port <PORT> \
 --target-ip <SERVER_IP> --target-port <SERVER_PORT> \
 --client-drop <VALUE> --server-drop <VALUE> \
 --client-delay <VALUE> --server-delay <VALUE> \
---client-delay-time <SECONDS> --server-delay-time <SECONDS> \
+--client-delay-time <MILLISECONDS> --server-delay-time <MILLISECONDS> \
 --control-port <PORT>
 ```
 
@@ -63,7 +67,7 @@ python proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0.1 --server-drop 0.2 \
 --client-delay 0.3 --server-delay 0.4 \
---client-delay-time 0.5 --server-delay-time 0.6 \
+--client-delay-time 500 --server-delay-time 600 \
 --control-port 4500
 ```
 
@@ -95,8 +99,8 @@ The proxy server supports **dynamic parameter updates** using the control socket
    - `server-drop`: Drop chance for server-to-client packets (0.0 to 1.0).
    - `client-delay`: Delay chance for client-to-server packets (0.0 to 1.0).
    - `server-delay`: Delay chance for server-to-client packets (0.0 to 1.0).
-   - `client-delay-time`: Delay time for client-to-server packets (seconds).
-   - `server-delay-time`: Delay time for server-to-client packets (seconds).
+   - `client-delay-time`: Delay time for client-to-server packets (milliseconds).
+   - `server-delay-time`: Delay time for server-to-client packets (milliseconds).
 
 ### **Examples**
 - Set client drop chance to 30%:
@@ -107,9 +111,9 @@ The proxy server supports **dynamic parameter updates** using the control socket
   ```bash
   echo "SET server-delay 0.5" | nc -u 127.0.0.1 4500
   ```
-- Set client delay time to 1 second:
+- Set client delay time to 500 milliseconds:
   ```bash
-  echo "SET client-delay-time 1.0" | nc -u 127.0.0.1 4500
+  echo "SET client-delay-time 500" | nc -u 127.0.0.1 4500
   ```
 
 ---
@@ -144,15 +148,75 @@ The proxy server supports **dynamic parameter updates** using the control socket
 | `--server-drop`      | Drop chance (0.0 to 1.0) for server packets.    | `--server-drop 0.2`         |
 | `--client-delay`     | Delay chance (0.0 to 1.0) for client packets.   | `--client-delay 0.3`        |
 | `--server-delay`     | Delay chance (0.0 to 1.0) for server packets.   | `--server-delay 0.4`        |
-| `--client-delay-time`| Delay time for client packets (sec).            | `--client-delay-time 0.5`   |
-| `--server-delay-time`| Delay time for server packets (sec).            | `--server-delay-time 0.6`   |
+| `--client-delay-time`| Delay time for client packets (ms).             | `--client-delay-time 500`   |
+| `--server-delay-time`| Delay time for server packets (ms).             | `--server-delay-time 600`   |
 | `--control-port`     | Port for the control socket.                    | `--control-port 4500`       |
 
 ---
+## **CSV Logging Format**
+The packets are logged as CSVs, below is the format for each CSV files.
 
+---
+
+### **1. Client Logging (`log_client.csv`)**
+| Column             | Description                                     |
+|---------------------|-------------------------------------------------|
+| `Timestamp`         | Time of the event (in microseconds precision).  |
+| `Event`             | Type of event (`Sent`, `Retransmit`, `Failed`, `Acknowledged`). |
+| `Sequence`          | Sequence number of the packet.                 |
+| `Acknowledgment`    | Acknowledgment number received from the server. |
+| `Source IP`         | Source IP address of the packet.               |
+| `Source Port`       | Source port of the packet.                     |
+| `Destination IP`    | Destination IP address of the packet.          |
+| `Destination Port`  | Destination port of the packet.                |
+| `Message`           | Message content of the packet.                |
+| `Latency (ms)`      | Time taken for acknowledgment in milliseconds (if applicable). |
+
+---
+
+### **2. Server Logging (`log_server.csv`)**
+| Column             | Description                                     |
+|---------------------|-------------------------------------------------|
+| `Timestamp`         | Time of the event (in microseconds precision).  |
+| `Event`             | Type of event (`Received`, `Out-of-Order`).     |
+| `Sequence`          | Sequence number of the packet.                 |
+| `Acknowledgment`    | Acknowledgment number sent to the client.       |
+| `Source IP`         | Source IP address of the packet.               |
+| `Source Port`       | Source port of the packet.                     |
+| `Destination IP`    | Destination IP address of the packet.          |
+| `Destination Port`  | Destination port of the packet.                |
+| `Message`           | Message content of the packet.                |
+| `Latency (ms)`      | Time taken to process the packet in milliseconds. |
+
+---
+
+### **3. Proxy Logging (`log_proxy.csv`)**
+| Column             | Description                                     |
+|---------------------|-------------------------------------------------|
+| `Timestamp`         | Time of the event (in microseconds precision).  |
+| `Event`             | Type of event (`Forwarded`, `Dropped`, `Duplicate`). |
+| `Sequence`          | Sequence number of the packet.                 |
+| `Acknowledgment`    | Acknowledgment number (if applicable).          |
+| `Source IP`         | Source IP address of the packet.               |
+| `Source Port`       | Source port of the packet.                     |
+| `Destination IP`    | Destination IP address of the packet.          |
+| `Destination Port`  | Destination port of the packet.                |
+| `Message`           | Message content of the packet.                |
+| `Latency (ms)`      | Simulated delay or processing time in milliseconds. |
+| `Drop Chance`       | Configured drop chance for the packet.          |
+| `Delay Chance`      | Configured delay chance for the packet.         |
+| `Delay Time (ms)`   | Simulated delay time for the packet in milliseconds. |
+---
 ## **Project Highlights**
 - Dynamic parameter adjustment using **control socket**.
 - Real-time simulation of unreliable networks.
 - Configurable packet drop and delay settings.
 
 This project was developed and tested on **Arch Linux** using Python. It demonstrates how to enhance UDP communication reliability through acknowledgment and retransmission mechanisms, along with handling packet loss and delay.
+
+---
+
+### **Key Changes Reflected**
+- **Delay times** are specified in **milliseconds**.
+- Examples updated to show delay time values in milliseconds.
+- CLI arguments for proxy server updated accordingly.
