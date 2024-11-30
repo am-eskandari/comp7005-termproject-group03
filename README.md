@@ -1,7 +1,3 @@
-Here's the updated README to align with the changes made in the CLI and how the delay time is now measured in milliseconds:
-
----
-
 # Reliable Communication Protocol Using UDP
 
 This project implements a **reliable communication protocol** using UDP, addressing challenges like packet loss and delays. It includes:
@@ -57,7 +53,7 @@ python proxy_server.py --listen-ip <IP> --listen-port <PORT> \
 --target-ip <SERVER_IP> --target-port <SERVER_PORT> \
 --client-drop <VALUE> --server-drop <VALUE> \
 --client-delay <VALUE> --server-delay <VALUE> \
---client-delay-time <MILLISECONDS> --server-delay-time <MILLISECONDS> \
+--client-delay-time <MILLISECONDS_OR_RANGE> --server-delay-time <MILLISECONDS_OR_RANGE> \
 --control-port <PORT>
 ```
 
@@ -67,7 +63,7 @@ python proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0.1 --server-drop 0.2 \
 --client-delay 0.3 --server-delay 0.4 \
---client-delay-time 500 --server-delay-time 600 \
+--client-delay-time 100-500 --server-delay-time 200-600 \
 --control-port 4500
 ```
 
@@ -99,8 +95,8 @@ The proxy server supports **dynamic parameter updates** using the control socket
    - `server-drop`: Drop chance for server-to-client packets (0.0 to 1.0).
    - `client-delay`: Delay chance for client-to-server packets (0.0 to 1.0).
    - `server-delay`: Delay chance for server-to-client packets (0.0 to 1.0).
-   - `client-delay-time`: Delay time for client-to-server packets (milliseconds).
-   - `server-delay-time`: Delay time for server-to-client packets (milliseconds).
+   - `client-delay-time`: Delay time for client-to-server packets (milliseconds or range, e.g., `100-500`).
+   - `server-delay-time`: Delay time for server-to-client packets (milliseconds or range, e.g., `200-600`).
 
 ### **Examples**
 - Set client drop chance to 30%:
@@ -111,9 +107,9 @@ The proxy server supports **dynamic parameter updates** using the control socket
   ```bash
   echo "SET server-delay 0.5" | nc -u 127.0.0.1 4500
   ```
-- Set client delay time to 500 milliseconds:
+- Set client delay time to a range (100-500 ms):
   ```bash
-  echo "SET client-delay-time 500" | nc -u 127.0.0.1 4500
+  echo "SET client-delay-time 100-500" | nc -u 127.0.0.1 4500
   ```
 
 ---
@@ -138,22 +134,24 @@ The proxy server supports **dynamic parameter updates** using the control socket
 ---
 
 ### **Proxy Server**
-| Argument            | Description                                     | Example                     |
-|----------------------|-------------------------------------------------|-----------------------------|
-| `--listen-ip`        | IP address to bind the proxy.                   | `--listen-ip 127.0.0.1`     |
-| `--listen-port`      | Port to listen for client packets.              | `--listen-port 4000`        |
-| `--target-ip`        | IP address of the server.                       | `--target-ip 127.0.0.1`     |
-| `--target-port`      | Port of the server.                             | `--target-port 5000`        |
-| `--client-drop`      | Drop chance (0.0 to 1.0) for client packets.    | `--client-drop 0.1`         |
-| `--server-drop`      | Drop chance (0.0 to 1.0) for server packets.    | `--server-drop 0.2`         |
-| `--client-delay`     | Delay chance (0.0 to 1.0) for client packets.   | `--client-delay 0.3`        |
-| `--server-delay`     | Delay chance (0.0 to 1.0) for server packets.   | `--server-delay 0.4`        |
-| `--client-delay-time`| Delay time for client packets (ms).             | `--client-delay-time 500`   |
-| `--server-delay-time`| Delay time for server packets (ms).             | `--server-delay-time 600`   |
-| `--control-port`     | Port for the control socket.                    | `--control-port 4500`       |
+| Argument            | Description                                     | Example                       |
+|----------------------|-------------------------------------------------|-------------------------------|
+| `--listen-ip`        | IP address to bind the proxy.                   | `--listen-ip 127.0.0.1`       |
+| `--listen-port`      | Port to listen for client packets.              | `--listen-port 4000`          |
+| `--target-ip`        | IP address of the server.                       | `--target-ip 127.0.0.1`       |
+| `--target-port`      | Port of the server.                             | `--target-port 5000`          |
+| `--client-drop`      | Drop chance (0.0 to 1.0) for client packets.    | `--client-drop 0.1`           |
+| `--server-drop`      | Drop chance (0.0 to 1.0) for server packets.    | `--server-drop 0.2`           |
+| `--client-delay`     | Delay chance (0.0 to 1.0) for client packets.   | `--client-delay 0.3`          |
+| `--server-delay`     | Delay chance (0.0 to 1.0) for server packets.   | `--server-delay 0.4`          |
+| `--client-delay-time`| Delay time for client packets (ms or range).    | `--client-delay-time 100-500` |
+| `--server-delay-time`| Delay time for server packets (ms or range).    | `--server-delay-time 200-600` |
+| `--control-port`     | Port for the control socket.                    | `--control-port 4500`         |
 
 ---
+
 ## **CSV Logging Format**
+
 The packets are logged as CSVs, below is the format for each CSV files.
 
 ---
@@ -206,17 +204,15 @@ The packets are logged as CSVs, below is the format for each CSV files.
 | `Drop Chance`       | Configured drop chance for the packet.          |
 | `Delay Chance`      | Configured delay chance for the packet.         |
 | `Delay Time (ms)`   | Simulated delay time for the packet in milliseconds. |
+
 ---
+
 ## **Project Highlights**
 - Dynamic parameter adjustment using **control socket**.
+- Support for **fixed or range-based delay times** in milliseconds.
 - Real-time simulation of unreliable networks.
 - Configurable packet drop and delay settings.
-
+- 
 This project was developed and tested on **Arch Linux** using Python. It demonstrates how to enhance UDP communication reliability through acknowledgment and retransmission mechanisms, along with handling packet loss and delay.
 
 ---
-
-### **Key Changes Reflected**
-- **Delay times** are specified in **milliseconds**.
-- Examples updated to show delay time values in milliseconds.
-- CLI arguments for proxy server updated accordingly.
