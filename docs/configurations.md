@@ -64,7 +64,7 @@ delay probabilities.
 
 ---
 
-### **3. Drop Configurations (No Delay)**
+## **3. Drop Configurations (No Delay)**
 
 This section explores the effects of packet drops without any delay interference.
 
