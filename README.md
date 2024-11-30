@@ -190,16 +190,17 @@ The packets are logged as CSVs, below is the format for each CSV files.
 
 ### **3. Proxy Logging (`log_proxy.csv`)**
 | Column             | Description                                     |
-|---------------------|-------------------------------------------------|
+|--------------------|-------------------------------------------------|
 | `Timestamp`         | Time of the event (in microseconds precision).  |
 | `Event`             | Type of event (`Forwarded`, `Dropped`, `Duplicate`). |
+| `Direction`         | Direction of the packet (`CTS` for Client-to-Server, `STC` for Server-to-Client). |
 | `Sequence`          | Sequence number of the packet.                 |
 | `Acknowledgment`    | Acknowledgment number (if applicable).          |
 | `Source IP`         | Source IP address of the packet.               |
 | `Source Port`       | Source port of the packet.                     |
 | `Destination IP`    | Destination IP address of the packet.          |
 | `Destination Port`  | Destination port of the packet.                |
-| `Message`           | Message content of the packet.                |
+| `Message`           | Message content of the packet.                 |
 | `Latency (ms)`      | Simulated delay or processing time in milliseconds. |
 | `Drop Chance`       | Configured drop chance for the packet.          |
 | `Delay Chance`      | Configured delay chance for the packet.         |
