@@ -150,3 +150,33 @@ simultaneously, ensuring thorough testing of symmetric and asymmetric conditions
 
 ---
 
+## **7. Additional Delay Time Test Cases**
+
+This section focuses on specific delay time configurations to evaluate the protocol's behavior under edge cases related
+to fixed and extended delay times.
+
+### **7.1 Fixed Delay Time Test**
+
+This test sets a fixed delay time of **500 ms** on either the client or server side, instead of an interval, to evaluate
+the protocol's handling of consistent delay.
+
+| Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms) | Description                  |
+|-----------|-----------------|-----------------|------------------|------------------|-----------------|------------------------------|
+| 37        | 0               | 0               | 50               | 0                | 500             | Fixed 500 ms delay on client |
+| 38        | 0               | 0               | 0                | 50               | 500             | Fixed 500 ms delay on server |
+
+---
+
+### **7.2 Extended Delay Beyond Retry Timeout**
+
+This test sets a delay longer than the client's retry timeout to evaluate how the protocol handles extreme delay
+scenarios.
+
+| Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms) | Description                                 |
+|-----------|-----------------|-----------------|------------------|------------------|-----------------|---------------------------------------------|
+| 39        | 0               | 0               | 100              | 0                | 2000            | Client delay beyond retry timeout           |
+| 40        | 0               | 0               | 0                | 100              | 2000            | Server delay beyond retry timeout           |
+| 41        | 0               | 0               | 100              | 100              | 2000            | Both client and server delay beyond timeout |
+
+---
+
