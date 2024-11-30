@@ -7,6 +7,8 @@ This project implements a **reliable communication protocol** using UDP, address
 
 The proxy server allows **dynamic parameter updates** via a dedicated **control socket**, enabling real-time adjustments without restarting the server.
 
+Check here for [test configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md).
+
 ---
 
 ## **Setup Instructions**
@@ -117,36 +119,36 @@ The proxy server supports **dynamic parameter updates** using the control socket
 ## **Command-Line Arguments for Each File**
 
 ### **Client**
-| Argument          | Description                       | Example                     |
-|--------------------|-----------------------------------|-----------------------------|
-| `--target-ip`      | IP address of the proxy server.   | `--target-ip 127.0.0.1`     |
-| `--target-port`    | Port of the proxy server.         | `--target-port 4000`        |
-| `--timeout`        | Timeout for acknowledgment (sec).| `--timeout 1`               |
+| Argument        | Description                       | Example                 |
+|-----------------|-----------------------------------|-------------------------|
+| `--target-ip`   | IP address of the proxy server.   | `--target-ip 127.0.0.1` |
+| `--target-port` | Port of the proxy server.         | `--target-port 4000`    |
+| `--timeout`     | Timeout for acknowledgment (sec). | `--timeout 1`           |
 
 ---
 
 ### **Server**
-| Argument          | Description                       | Example                     |
-|--------------------|-----------------------------------|-----------------------------|
-| `--listen-ip`      | IP address to bind the server.    | `--listen-ip 127.0.0.1`     |
-| `--listen-port`    | Port for the server to listen on. | `--listen-port 5000`        |
+| Argument        | Description                       | Example                 |
+|-----------------|-----------------------------------|-------------------------|
+| `--listen-ip`   | IP address to bind the server.    | `--listen-ip 127.0.0.1` |
+| `--listen-port` | Port for the server to listen on. | `--listen-port 5000`    |
 
 ---
 
 ### **Proxy Server**
-| Argument            | Description                                     | Example                       |
-|----------------------|-------------------------------------------------|-------------------------------|
-| `--listen-ip`        | IP address to bind the proxy.                   | `--listen-ip 127.0.0.1`       |
-| `--listen-port`      | Port to listen for client packets.              | `--listen-port 4000`          |
-| `--target-ip`        | IP address of the server.                       | `--target-ip 127.0.0.1`       |
-| `--target-port`      | Port of the server.                             | `--target-port 5000`          |
-| `--client-drop`      | Drop chance (0.0 to 1.0) for client packets.    | `--client-drop 0.1`           |
-| `--server-drop`      | Drop chance (0.0 to 1.0) for server packets.    | `--server-drop 0.2`           |
-| `--client-delay`     | Delay chance (0.0 to 1.0) for client packets.   | `--client-delay 0.3`          |
-| `--server-delay`     | Delay chance (0.0 to 1.0) for server packets.   | `--server-delay 0.4`          |
-| `--client-delay-time`| Delay time for client packets (ms or range).    | `--client-delay-time 100-500` |
-| `--server-delay-time`| Delay time for server packets (ms or range).    | `--server-delay-time 200-600` |
-| `--control-port`     | Port for the control socket.                    | `--control-port 4500`         |
+| Argument              | Description                                   | Example                       |
+|-----------------------|-----------------------------------------------|-------------------------------|
+| `--listen-ip`         | IP address to bind the proxy.                 | `--listen-ip 127.0.0.1`       |
+| `--listen-port`       | Port to listen for client packets.            | `--listen-port 4000`          |
+| `--target-ip`         | IP address of the server.                     | `--target-ip 127.0.0.1`       |
+| `--target-port`       | Port of the server.                           | `--target-port 5000`          |
+| `--client-drop`       | Drop chance (0.0 to 1.0) for client packets.  | `--client-drop 0.1`           |
+| `--server-drop`       | Drop chance (0.0 to 1.0) for server packets.  | `--server-drop 0.2`           |
+| `--client-delay`      | Delay chance (0.0 to 1.0) for client packets. | `--client-delay 0.3`          |
+| `--server-delay`      | Delay chance (0.0 to 1.0) for server packets. | `--server-delay 0.4`          |
+| `--client-delay-time` | Delay time for client packets (ms or range).  | `--client-delay-time 100-500` |
+| `--server-delay-time` | Delay time for server packets (ms or range).  | `--server-delay-time 200-600` |
+| `--control-port`      | Port for the control socket.                  | `--control-port 4500`         |
 
 ---
 
@@ -157,54 +159,54 @@ The packets are logged as CSVs, below is the format for each CSV files.
 ---
 
 ### **1. Client Logging (`log_client.csv`)**
-| Column             | Description                                     |
-|---------------------|-------------------------------------------------|
-| `Timestamp`         | Time of the event (in microseconds precision).  |
-| `Event`             | Type of event (`Sent`, `Retransmit`, `Failed`, `Acknowledged`). |
-| `Sequence`          | Sequence number of the packet.                 |
-| `Acknowledgment`    | Acknowledgment number received from the server. |
-| `Source IP`         | Source IP address of the packet.               |
-| `Source Port`       | Source port of the packet.                     |
-| `Destination IP`    | Destination IP address of the packet.          |
-| `Destination Port`  | Destination port of the packet.                |
-| `Message`           | Message content of the packet.                |
-| `Latency (ms)`      | Time taken for acknowledgment in milliseconds (if applicable). |
+| Column             | Description                                                     |
+|--------------------|-----------------------------------------------------------------|
+| `Timestamp`        | Time of the event (in microseconds precision).                  |
+| `Event`            | Type of event (`Sent`, `Retransmit`, `Failed`, `Acknowledged`). |
+| `Sequence`         | Sequence number of the packet.                                  |
+| `Acknowledgment`   | Acknowledgment number received from the server.                 |
+| `Source IP`        | Source IP address of the packet.                                |
+| `Source Port`      | Source port of the packet.                                      |
+| `Destination IP`   | Destination IP address of the packet.                           |
+| `Destination Port` | Destination port of the packet.                                 |
+| `Message`          | Message content of the packet.                                  |
+| `Latency (ms)`     | Time taken for acknowledgment in milliseconds (if applicable).  |
 
 ---
 
 ### **2. Server Logging (`log_server.csv`)**
-| Column             | Description                                     |
-|---------------------|-------------------------------------------------|
-| `Timestamp`         | Time of the event (in microseconds precision).  |
-| `Event`             | Type of event (`Received`, `Out-of-Order`).     |
-| `Sequence`          | Sequence number of the packet.                 |
-| `Acknowledgment`    | Acknowledgment number sent to the client.       |
-| `Source IP`         | Source IP address of the packet.               |
-| `Source Port`       | Source port of the packet.                     |
-| `Destination IP`    | Destination IP address of the packet.          |
-| `Destination Port`  | Destination port of the packet.                |
-| `Message`           | Message content of the packet.                |
-| `Latency (ms)`      | Time taken to process the packet in milliseconds. |
+| Column             | Description                                       |
+|--------------------|---------------------------------------------------|
+| `Timestamp`        | Time of the event (in microseconds precision).    |
+| `Event`            | Type of event (`Received`, `Out-of-Order`).       |
+| `Sequence`         | Sequence number of the packet.                    |
+| `Acknowledgment`   | Acknowledgment number sent to the client.         |
+| `Source IP`        | Source IP address of the packet.                  |
+| `Source Port`      | Source port of the packet.                        |
+| `Destination IP`   | Destination IP address of the packet.             |
+| `Destination Port` | Destination port of the packet.                   |
+| `Message`          | Message content of the packet.                    |
+| `Latency (ms)`     | Time taken to process the packet in milliseconds. |
 
 ---
 
 ### **3. Proxy Logging (`log_proxy.csv`)**
-| Column             | Description                                     |
-|--------------------|-------------------------------------------------|
-| `Timestamp`         | Time of the event (in microseconds precision).  |
-| `Event`             | Type of event (`Forwarded`, `Dropped`, `Duplicate`). |
-| `Direction`         | Direction of the packet (`CTS` for Client-to-Server, `STC` for Server-to-Client). |
-| `Sequence`          | Sequence number of the packet.                 |
-| `Acknowledgment`    | Acknowledgment number (if applicable).          |
-| `Source IP`         | Source IP address of the packet.               |
-| `Source Port`       | Source port of the packet.                     |
-| `Destination IP`    | Destination IP address of the packet.          |
-| `Destination Port`  | Destination port of the packet.                |
-| `Message`           | Message content of the packet.                 |
-| `Latency (ms)`      | Simulated delay or processing time in milliseconds. |
-| `Drop Chance`       | Configured drop chance for the packet.          |
-| `Delay Chance`      | Configured delay chance for the packet.         |
-| `Delay Time (ms)`   | Simulated delay time for the packet in milliseconds. |
+| Column             | Description                                                                       |
+|--------------------|-----------------------------------------------------------------------------------|
+| `Timestamp`        | Time of the event (in microseconds precision).                                    |
+| `Event`            | Type of event (`Forwarded`, `Dropped`, `Duplicate`).                              |
+| `Direction`        | Direction of the packet (`CTS` for Client-to-Server, `STC` for Server-to-Client). |
+| `Sequence`         | Sequence number of the packet.                                                    |
+| `Acknowledgment`   | Acknowledgment number (if applicable).                                            |
+| `Source IP`        | Source IP address of the packet.                                                  |
+| `Source Port`      | Source port of the packet.                                                        |
+| `Destination IP`   | Destination IP address of the packet.                                             |
+| `Destination Port` | Destination port of the packet.                                                   |
+| `Message`          | Message content of the packet.                                                    |
+| `Latency (ms)`     | Simulated delay or processing time in milliseconds.                               |
+| `Drop Chance`      | Configured drop chance for the packet.                                            |
+| `Delay Chance`     | Configured delay chance for the packet.                                           |
+| `Delay Time (ms)`  | Simulated delay time for the packet in milliseconds.                              |
 
 ---
 
