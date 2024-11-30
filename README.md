@@ -24,9 +24,10 @@ acknowledgment and retransmission mechanisms, addressing packet loss and delay c
 
 ### **Documentation Links**
 
-- [Test Case Configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md):
+- [Test Case Configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/docs/configurations.md):
   Explore combinations of parameters tested for drop and delay scenarios.
-- [Test Commands](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md): Review the
+- [Test Commands](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/docs/tests.md): Review
+  the
   commands used to execute and validate the test cases.
 
 ---
