@@ -1,27 +1,39 @@
 # Reliable Communication Protocol Using UDP
 
-This project implements a **reliable communication protocol** using UDP, addressing challenges like packet loss and
-delays. It includes:
+This project implements a **reliable communication protocol** using UDP to address challenges like packet loss and
+delays. The system includes the following components:
 
-- A **client** for sending messages.
-- A **server** for receiving and acknowledging messages.
-- A **proxy server** to simulate unreliable network conditions with configurable parameters.
+- **Client**: Sends messages to the server via the proxy.
+- **Server**: Receives and acknowledges messages from the client.
+- **Proxy Server**: Simulates unreliable network conditions with configurable parameters and supports dynamic updates
+  via a control socket.
 
-The proxy server allows **dynamic parameter updates** via a dedicated **control socket**, enabling real-time adjustments
-without restarting the server.
+### **Key Features**
 
-### Test Cases and Configurations:
+- **Dynamic Parameter Adjustment**: Modify drop rates, delay probabilities, and delay times in real-time using the
+  control socket.
+- **Flexible Delay Configuration**: Supports both fixed and range-based delay times (e.g., `200-600ms`).
+- **Real-Time Network Simulation**: Emulates packet loss, delay, and retransmission scenarios to test system
+  reliability.
+- **Configurable Drop and Delay Settings**: Tailor network conditions to mimic various real-world scenarios.
 
-Check here
-for [combination of configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md).
-
-Check here
-for [list of commands used to test the configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md).
-
+This project, developed and tested on **Arch Linux**, demonstrates how to improve UDP communication reliability through
+acknowledgment and retransmission mechanisms, addressing packet loss and delay challenges.
 
 ---
 
-## **Setup Instructions**
+### **Documentation Links**
+
+- [Test Case Configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md):
+  Explore combinations of parameters tested for drop and delay scenarios.
+- [Test Commands](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md): Review the
+  commands used to execute and validate the test cases.
+
+---
+
+## **0. Setup Instructions**
+
+---
 
 ### **Prerequisites**
 
@@ -31,6 +43,8 @@ for [list of commands used to test the configurations](https://github.com/am-esk
     - `socket`
     - `argparse`
     - `threading`
+
+---
 
 ### **Installation**
 
@@ -43,10 +57,14 @@ for [list of commands used to test the configurations](https://github.com/am-esk
    sudo pacman -S openbsd-netcat
    ```
 
+---
+
 ### **Device Discovery and Communication Verification**
 
 Before running the system, ensure that all devices (client, server, and proxy) can communicate with each other on the
 same network.
+
+---
 
 #### **1. Check Device IPs**
 
@@ -92,7 +110,7 @@ ping <DEVICE_IP>
 
 ---
 
-## **How to Run**
+## **1. How to Run**
 
 ### **1. Start the Server**
 
@@ -159,7 +177,7 @@ python client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
 
 ---
 
-## **Changing Parameters Dynamically**
+## **2. Changing Parameters Dynamically**
 
 The proxy server supports **dynamic parameter updates** using the control socket (e.g., via **Netcat**).
 
@@ -197,7 +215,7 @@ The proxy server supports **dynamic parameter updates** using the control socket
 
 ---
 
-## **Command-Line Arguments for Each File**
+## **3. Command-Line Arguments for Each File**
 
 ### **Client**
 
@@ -236,7 +254,7 @@ The proxy server supports **dynamic parameter updates** using the control socket
 
 ---
 
-## **CSV Logging Format**
+## **5. CSV Logging Format**
 
 The packets are logged as CSVs, below is the format for each CSV files.
 
@@ -297,14 +315,3 @@ The packets are logged as CSVs, below is the format for each CSV files.
 
 ---
 
-## **Project Highlights**
-
-- Dynamic parameter adjustment using **control socket**.
-- Support for **fixed or range-based delay times** in milliseconds.
-- Real-time simulation of unreliable networks.
-- Configurable packet drop and delay settings.
-
-This project was developed and tested on **Arch Linux** using Python. It demonstrates how to enhance UDP communication
-reliability through acknowledgment and retransmission mechanisms, along with handling packet loss and delay.
-
----
