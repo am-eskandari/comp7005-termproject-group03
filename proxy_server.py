@@ -15,6 +15,22 @@ proxy_config = {
     "server-delay-time": 0.0,
 }
 
+# Cache for deduplication
+dedup_cache = {
+    "client_to_server": set(),
+    "server_to_client": set(),
+}
+
+CACHE_TIMEOUT = 10  # Time in seconds to keep sequence numbers in cache
+
+
+def clear_expired_cache():
+    """Clear deduplication cache periodically to prevent memory bloat."""
+    while True:
+        time.sleep(CACHE_TIMEOUT)
+        dedup_cache["client_to_server"].clear()
+        dedup_cache["server_to_client"].clear()
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="UDP Proxy Server with Dynamic Configuration")
@@ -44,17 +60,29 @@ def udp_proxy(proxy_socket, server_ip, server_port):
         try:
             # Receive data from client or server
             data, addr = proxy_socket.recvfrom(65507)
+            message = data.decode()
 
-            # Log incoming packet details
-            if ":" in data.decode():
-                seq_number, payload = data.decode().split(":", 1)
+            # Check if the message is an acknowledgment
+            if message.startswith("ACK:"):
+                seq_number = message.split(":")[1]
+                is_ack = True
             else:
-                seq_number, payload = None, data.decode()
+                seq_number = message.split(":", 1)[0] if ":" in message else None
+                is_ack = False
 
             # Identify if it's a client or server packet
             if addr != (server_ip, server_port):
                 # Packet from the client
                 client_address = addr  # Save the client address
+
+                # Deduplication for client-to-server
+                if not is_ack and seq_number in dedup_cache["client_to_server"]:
+                    print(f"🔄 [Client -> Server] Duplicate packet [SEQ {seq_number}] from {addr}. Ignored.")
+                    continue
+
+                if not is_ack:
+                    dedup_cache["client_to_server"].add(seq_number)
+
                 if random.random() < proxy_config["client-drop"]:
                     print(f"❌ [Client -> Server] Dropped packet [SEQ {seq_number}] from {addr}")
                     continue
@@ -69,6 +97,15 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                 if not client_address:
                     print("⚠️ No client address to forward to. Dropping packet.")
                     continue
+
+                # Deduplication for server-to-client
+                if is_ack and seq_number in dedup_cache["server_to_client"]:
+                    print(f"🔄 [Server -> Client] Duplicate acknowledgment [ACK {seq_number}] from {addr}. Ignored.")
+                    continue
+
+                if is_ack:
+                    dedup_cache["server_to_client"].add(seq_number)
+
                 if random.random() < proxy_config["server-drop"]:
                     print(f"❌ [Server -> Client] Dropped packet [SEQ {seq_number}] from {addr}")
                     continue
@@ -146,6 +183,7 @@ def main():
     # Start proxy and control threads
     threading.Thread(target=udp_proxy, args=(proxy_socket, args.target_ip, args.target_port), daemon=True).start()
     threading.Thread(target=handle_control, args=(control_socket,), daemon=True).start()
+    threading.Thread(target=clear_expired_cache, daemon=True).start()
 
     try:
         while True:

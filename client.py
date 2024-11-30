@@ -32,7 +32,7 @@ def udp_client(server_ip, server_port, timeout=2):
             # Prepare the message with the sequence number
             message_with_seq = f"{sequence_number}:{message}"
 
-            for attempt in range(3):  # Retry up to 3 times
+            for attempt in range(10):  # Retry up to 3 times
                 try:
                     # Send the message to the server
                     client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
@@ -54,7 +54,7 @@ def udp_client(server_ip, server_port, timeout=2):
                     print(f"⏳ Timeout! Retrying... (Attempt {attempt + 1})")
             else:
                 # If all attempts fail, notify the user
-                print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 3 attempts.\n")
+                print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 10 attempts.\n")
 
         except KeyboardInterrupt:
             print("\n👋 Exiting client. Goodbye!")
