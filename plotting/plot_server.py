@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load the CSV file
-data = pd.read_csv("log_server.csv")
+data = pd.read_csv("../log_server.csv")
 
 # Convert the timestamp to datetime for easier grouping and plotting
 data['Timestamp'] = pd.to_datetime(data['Timestamp'])
