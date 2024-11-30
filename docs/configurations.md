@@ -66,30 +66,31 @@ delay probabilities.
 
 ### **3. Drop Configurations (No Delay)**
 
-This table focuses exclusively on drop scenarios to understand the effects of packet loss without any delay
-interference.
+This section explores the effects of packet drops without any delay interference.
 
-- **Client Drop Only (Test Cases 8, 9):** Tests the effect of 50% and 100% packet drop probabilities on the client side
-  while keeping the server unaffected.
-- **Server Drop Only (Test Cases 10, 11):** Tests the effect of 50% and 100% packet drop probabilities on the server
-  side while keeping the client unaffected.
-- **Combined Client and Server Drop (Test Cases 12-15):** Covers scenarios where both client and server experience
+- **Client Drop Only (Test Cases 10, 11):** Examines the impact of 50% and 100% packet drop probabilities on the client
+  side, with the server unaffected.
+- **Server Drop Only (Test Cases 12, 13):** Evaluates the impact of 50% and 100% packet drop probabilities on the server
+  side, with the client unaffected.
+- **Combined Client and Server Drop (Test Cases 14-17):** Tests scenarios where both client and server experience packet
   drops, either symmetrically (50%/50%, 100%/100%) or asymmetrically (50%/100%, 100%/50%).
 
 | Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms) | Description                         |
 |-----------|-----------------|-----------------|------------------|------------------|-----------------|-------------------------------------|
-| 8         | 50              | 0               | 0                | 0                | 0               | 50% drop on client only             |
-| 9         | 100             | 0               | 0                | 0                | 0               | 100% drop on client only            |
-| 10        | 0               | 50              | 0                | 0                | 0               | 50% drop on server only             |
-| 11        | 0               | 100             | 0                | 0                | 0               | 100% drop on server only            |
-| 12        | 50              | 50              | 0                | 0                | 0               | 50% drop on both client and server  |
-| 13        | 100             | 50              | 0                | 0                | 0               | 100% client drop, 50% server drop   |
-| 14        | 50              | 100             | 0                | 0                | 0               | 50% client drop, 100% server drop   |
-| 15        | 100             | 100             | 0                | 0                | 0               | 100% drop on both client and server |
+| 10        | 50              | 0               | 0                | 0                | 0               | 50% drop on client only             |
+| 11        | 100             | 0               | 0                | 0                | 0               | 100% drop on client only            |
+| 12        | 0               | 50              | 0                | 0                | 0               | 50% drop on server only             |
+| 13        | 0               | 100             | 0                | 0                | 0               | 100% drop on server only            |
+| 14        | 50              | 50              | 0                | 0                | 0               | 50% drop on both client and server  |
+| 15        | 100             | 50              | 0                | 0                | 0               | 100% client drop, 50% server drop   |
+| 16        | 50              | 100             | 0                | 0                | 0               | 50% client drop, 100% server drop   |
+| 17        | 100             | 100             | 0                | 0                | 0               | 100% drop on both client and server |
 
----
+--- 
 
-### **3. Client Drop + Delay Configurations**
+This updated table ensures the numbering aligns with the continuation from the previous section.
+
+## **3. Client Drop + Delay Configurations**
 
 This table combines client-side drop and delay probabilities to observe how packet loss and latency interact for the
 client.
@@ -106,7 +107,7 @@ client.
 
 ---
 
-### **4. Server Drop + Delay Configurations**
+## **4. Server Drop + Delay Configurations**
 
 This table combines server-side drop and delay probabilities to analyze how these factors affect server behavior
 independently.
@@ -123,7 +124,7 @@ independently.
 
 ---
 
-### **5. Combined Client and Server Drop + Delay Configurations**
+## **5. Combined Client and Server Drop + Delay Configurations**
 
 This table explores the interaction between drop and delay probabilities across both the client and server
 simultaneously. It ensures thorough testing of symmetric and asymmetric conditions, while avoiding redundancies with
