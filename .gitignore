@@ -163,5 +163,5 @@ cython_debug/
 
 
 #Log files
-client_log.csv
-server_log.csv
+log_client.csv
+log_server.csv
