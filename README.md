@@ -43,6 +43,53 @@ for [list of commands used to test the configurations](https://github.com/am-esk
    sudo pacman -S openbsd-netcat
    ```
 
+### **Device Discovery and Communication Verification**
+
+Before running the system, ensure that all devices (client, server, and proxy) can communicate with each other on the
+same network.
+
+#### **1. Check Device IPs**
+
+Use the `ip addr` command to find the IP addresses of devices on the same network:
+
+```bash
+ip addr
+```
+
+- Look for the IP address under the appropriate network interface (e.g., `eth0`, `wlan0`).
+- Note the IP addresses for the client, server, and proxy machines.
+
+---
+
+#### **2. Verify Port Availability**
+
+Ensure that the required ports (e.g., `4000`, `4500`, `5000`) are not in use. Use the `netstat` or `ss` command:
+
+```bash
+sudo netstat -tuln | grep <PORT>
+```
+
+or
+
+```bash
+sudo ss -tuln | grep <PORT>
+```
+
+If the port is in use, stop the conflicting process or use a different port for your application.
+
+---
+
+#### **3. Test Network Connectivity**
+
+Use the `ping` command to ensure that devices can communicate:
+
+```bash
+ping <DEVICE_IP>
+```
+
+- Replace `<DEVICE_IP>` with the IP address of another device (e.g., the server or proxy).
+- Ensure packets are sent and received successfully. If not, check firewall settings or network configurations.
+
 ---
 
 ## **How to Run**
@@ -101,6 +148,14 @@ python client.py --target-ip <PROXY_IP> --target-port <PROXY_PORT> --timeout <SE
 ```bash
 python client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
 ```
+
+---
+
+### **Final Network Check**
+
+1. Ensure all devices are on the same subnet (e.g., `192.168.1.x`).
+2. Confirm successful pings between devices.
+3. Verify that required ports are not blocked by firewalls.
 
 ---
 
