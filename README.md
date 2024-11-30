@@ -1,5 +1,3 @@
-### Corrected README for Reliable Communication Protocol Using UDP
-
 # Reliable Communication Protocol Using UDP
 
 This project implements a **reliable communication protocol** using UDP, addressing challenges like packet loss and delays. It includes:
