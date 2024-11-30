@@ -180,3 +180,14 @@ scenarios.
 
 ---
 
+## **8. Changing Parameters Dynamically**
+
+The proxy server supports dynamic parameter updates using the control socket (e.g., via Netcat). This allows you to
+modify drop chances, delay probabilities, and delay times without restarting the proxy server.
+
+---
+
+Check here
+for [list of commands used to test this](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md).
+
+---

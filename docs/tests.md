@@ -557,3 +557,96 @@ python3 client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
 
 ---
 
+## **8. Changing Parameters Dynamically**
+
+The proxy server supports **dynamic parameter updates** using the control socket (e.g., via **Netcat**). This allows you
+to modify drop chances, delay probabilities, and delay times without restarting the proxy server.
+
+---
+
+### **8.1 Steps to Change Parameters**
+
+1. **Start the Proxy Server**  
+   Run the proxy server with the base case configuration:
+   ```bash
+   python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+   --target-ip 127.0.0.1 --target-port 5000 \
+   --client-drop 0 --server-drop 0 \
+   --client-delay 0 --server-delay 0 \
+   --client-delay-time 0 --server-delay-time 0 \
+   --control-port 4500
+   ```
+
+2. **Modify Parameters Dynamically**  
+   Use Netcat (`nc`) to send commands to the control socket and modify parameters.
+
+#### **Available Parameters**
+
+| Parameter           | Description                                             | Example Values   |
+|---------------------|---------------------------------------------------------|------------------|
+| `client-drop`       | Drop chance for client-to-server packets (0.0 to 1.0).  | `0.3` (30%)      |
+| `server-drop`       | Drop chance for server-to-client packets (0.0 to 1.0).  | `0.5` (50%)      |
+| `client-delay`      | Delay chance for client-to-server packets (0.0 to 1.0). | `0.7` (70%)      |
+| `server-delay`      | Delay chance for server-to-client packets (0.0 to 1.0). | `1.0` (100%)     |
+| `client-delay-time` | Delay time for client-to-server packets in ms or range. | `100`, `100-500` |
+| `server-delay-time` | Delay time for server-to-client packets in ms or range. | `200`, `200-600` |
+
+---
+
+### **8.2 Example Test Flow**
+
+Below is an example of testing parameter changes dynamically.
+
+1. **Start with the Base Case**  
+   Run the client and server alongside the proxy server with no drops or delays.
+
+    - **Server:**
+      ```bash
+      python3 server.py --listen-ip 127.0.0.1 --listen-port 5000
+      ```
+    - **Client:**
+      ```bash
+      python3 client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
+      ```
+    - **Proxy:**
+      ```bash
+      python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+      --target-ip 127.0.0.1 --target-port 5000 \
+      --client-drop 0 --server-drop 0 \
+      --client-delay 0 --server-delay 0 \
+      --client-delay-time 0 --server-delay-time 0 \
+      --control-port 4500
+      ```
+
+2. **Modify Parameters Dynamically**  
+   Test the effect of parameter changes step-by-step.
+
+    - **Set Client Drop Chance to 30%**  
+      Introduce a moderate drop rate for client-to-server packets:
+      ```bash
+      echo "SET client-drop 0.3" | nc -u 127.0.0.1 4500
+      ```
+
+    - **Set Server Delay to 50%**  
+      Simulate latency on server-to-client packets:
+      ```bash
+      echo "SET server-delay 0.5" | nc -u 127.0.0.1 4500
+      ```
+
+    - **Set Client Delay Time to Fixed 200 ms**  
+      Introduce a consistent delay for client-to-server packets:
+      ```bash
+      echo "SET client-delay-time 200" | nc -u 127.0.0.1 4500
+      ```
+
+    - **Set Server Drop Chance to 100%**  
+      Simulate complete loss of server-to-client packets:
+      ```bash
+      echo "SET server-drop 1.0" | nc -u 127.0.0.1 4500
+      ```
+
+3. **Observe Behavior**  
+   Monitor the client and server logs to observe how the protocol handles the dynamically updated conditions. Look for
+   retransmissions, timeouts, and acknowledgment delays in the logs.
+
+---

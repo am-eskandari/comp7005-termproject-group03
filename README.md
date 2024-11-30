@@ -1,17 +1,22 @@
 # Reliable Communication Protocol Using UDP
 
-This project implements a **reliable communication protocol** using UDP, addressing challenges like packet loss and delays. It includes:
+This project implements a **reliable communication protocol** using UDP, addressing challenges like packet loss and
+delays. It includes:
+
 - A **client** for sending messages.
 - A **server** for receiving and acknowledging messages.
 - A **proxy server** to simulate unreliable network conditions with configurable parameters.
 
-The proxy server allows **dynamic parameter updates** via a dedicated **control socket**, enabling real-time adjustments without restarting the server.
+The proxy server allows **dynamic parameter updates** via a dedicated **control socket**, enabling real-time adjustments
+without restarting the server.
 
 ### Test Cases and Configurations:
 
-Check here for [combination of configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md).
+Check here
+for [combination of configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md).
 
-Check here for [list of commands used to test the configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md).
+Check here
+for [list of commands used to test the configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md).
 
 
 ---
@@ -19,14 +24,16 @@ Check here for [list of commands used to test the configurations](https://github
 ## **Setup Instructions**
 
 ### **Prerequisites**
+
 - Tested on: **Arch Linux**, **Manjaro**, **Ubuntu**
 - Python version: **3.12 or higher**
 - Required libraries:
-  - `socket`
-  - `argparse`
-  - `threading`
+    - `socket`
+    - `argparse`
+    - `threading`
 
 ### **Installation**
+
 1. Ensure Python is installed:
    ```bash
    sudo pacman -S python
@@ -41,20 +48,26 @@ Check here for [list of commands used to test the configurations](https://github
 ## **How to Run**
 
 ### **1. Start the Server**
+
 Run the server to listen for incoming messages:
+
 ```bash
 python server.py --listen-ip <IP> --listen-port <PORT>
 ```
 
 **Example:**
+
 ```bash
 python server.py --listen-ip 127.0.0.1 --listen-port 5000
 ```
 
 ### **2. Start the Proxy Server**
-The proxy server relays packets between the client and server while simulating network conditions. It also provides a **control interface** for dynamic parameter updates.
+
+The proxy server relays packets between the client and server while simulating network conditions. It also provides a *
+*control interface** for dynamic parameter updates.
 
 Run the proxy server:
+
 ```bash
 python proxy_server.py --listen-ip <IP> --listen-port <PORT> \
 --target-ip <SERVER_IP> --target-port <SERVER_PORT> \
@@ -65,6 +78,7 @@ python proxy_server.py --listen-ip <IP> --listen-port <PORT> \
 ```
 
 **Example:**
+
 ```bash
 python proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
@@ -75,12 +89,15 @@ python proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 ```
 
 ### **3. Start the Client**
+
 Run the client to send messages to the server via the proxy:
+
 ```bash
 python client.py --target-ip <PROXY_IP> --target-port <PROXY_PORT> --timeout <SECONDS>
 ```
 
 **Example:**
+
 ```bash
 python client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
 ```
@@ -92,20 +109,22 @@ python client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
 The proxy server supports **dynamic parameter updates** using the control socket (e.g., via **Netcat**).
 
 ### **Steps to Change Parameters**
+
 1. Send a command to the control socket:
    ```bash
    echo "SET <PARAMETER> <VALUE>" | nc -u <CONTROL_IP> <CONTROL_PORT>
    ```
 
 2. Available parameters:
-   - `client-drop`: Drop chance for client-to-server packets (0.0 to 1.0).
-   - `server-drop`: Drop chance for server-to-client packets (0.0 to 1.0).
-   - `client-delay`: Delay chance for client-to-server packets (0.0 to 1.0).
-   - `server-delay`: Delay chance for server-to-client packets (0.0 to 1.0).
-   - `client-delay-time`: Delay time for client-to-server packets (milliseconds or range, e.g., `100-500`).
-   - `server-delay-time`: Delay time for server-to-client packets (milliseconds or range, e.g., `200-600`).
+    - `client-drop`: Drop chance for client-to-server packets (0.0 to 1.0).
+    - `server-drop`: Drop chance for server-to-client packets (0.0 to 1.0).
+    - `client-delay`: Delay chance for client-to-server packets (0.0 to 1.0).
+    - `server-delay`: Delay chance for server-to-client packets (0.0 to 1.0).
+    - `client-delay-time`: Delay time for client-to-server packets (milliseconds or range, e.g., `100-500`).
+    - `server-delay-time`: Delay time for server-to-client packets (milliseconds or range, e.g., `200-600`).
 
 ### **Examples**
+
 - Set client drop chance to 30%:
   ```bash
   echo "SET client-drop 0.3" | nc -u 127.0.0.1 4500
@@ -124,6 +143,7 @@ The proxy server supports **dynamic parameter updates** using the control socket
 ## **Command-Line Arguments for Each File**
 
 ### **Client**
+
 | Argument        | Description                       | Example                 |
 |-----------------|-----------------------------------|-------------------------|
 | `--target-ip`   | IP address of the proxy server.   | `--target-ip 127.0.0.1` |
@@ -133,6 +153,7 @@ The proxy server supports **dynamic parameter updates** using the control socket
 ---
 
 ### **Server**
+
 | Argument        | Description                       | Example                 |
 |-----------------|-----------------------------------|-------------------------|
 | `--listen-ip`   | IP address to bind the server.    | `--listen-ip 127.0.0.1` |
@@ -141,6 +162,7 @@ The proxy server supports **dynamic parameter updates** using the control socket
 ---
 
 ### **Proxy Server**
+
 | Argument              | Description                                   | Example                       |
 |-----------------------|-----------------------------------------------|-------------------------------|
 | `--listen-ip`         | IP address to bind the proxy.                 | `--listen-ip 127.0.0.1`       |
@@ -164,6 +186,7 @@ The packets are logged as CSVs, below is the format for each CSV files.
 ---
 
 ### **1. Client Logging (`log_client.csv`)**
+
 | Column             | Description                                                     |
 |--------------------|-----------------------------------------------------------------|
 | `Timestamp`        | Time of the event (in microseconds precision).                  |
@@ -180,6 +203,7 @@ The packets are logged as CSVs, below is the format for each CSV files.
 ---
 
 ### **2. Server Logging (`log_server.csv`)**
+
 | Column             | Description                                       |
 |--------------------|---------------------------------------------------|
 | `Timestamp`        | Time of the event (in microseconds precision).    |
@@ -196,6 +220,7 @@ The packets are logged as CSVs, below is the format for each CSV files.
 ---
 
 ### **3. Proxy Logging (`log_proxy.csv`)**
+
 | Column             | Description                                                                       |
 |--------------------|-----------------------------------------------------------------------------------|
 | `Timestamp`        | Time of the event (in microseconds precision).                                    |
@@ -216,11 +241,13 @@ The packets are logged as CSVs, below is the format for each CSV files.
 ---
 
 ## **Project Highlights**
+
 - Dynamic parameter adjustment using **control socket**.
 - Support for **fixed or range-based delay times** in milliseconds.
 - Real-time simulation of unreliable networks.
 - Configurable packet drop and delay settings.
-- 
-This project was developed and tested on **Arch Linux** using Python. It demonstrates how to enhance UDP communication reliability through acknowledgment and retransmission mechanisms, along with handling packet loss and delay.
+
+This project was developed and tested on **Arch Linux** using Python. It demonstrates how to enhance UDP communication
+reliability through acknowledgment and retransmission mechanisms, along with handling packet loss and delay.
 
 ---
