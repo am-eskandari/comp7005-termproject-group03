@@ -36,12 +36,12 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --control-port 4500
 ```
 
+---
+
 ## **2. Delay Configurations (No Drop)**
 
-This section focuses on delay scenarios without introducing any packet drops to evaluate the impact of latency on the
-protocol. It includes configurations for client-only delays, server-only delays, and combined client and server delays.
-
----
+This section explores the impact of delay configurations on the client and server, including various combinations of
+delay probabilities.
 
 ### **Client Delay Only**
 
@@ -56,7 +56,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 ```
 
 ```bash
-# Test Case 3: 100% Client Delay
+# Test Case 5: 100% Client Delay
 python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
@@ -70,7 +70,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 ### **Server Delay Only**
 
 ```bash
-# Test Case 4: 50% Server Delay
+# Test Case 3: 50% Server Delay
 python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
@@ -80,7 +80,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 ```
 
 ```bash
-# Test Case 5: 100% Server Delay
+# Test Case 6: 100% Server Delay
 python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
@@ -94,7 +94,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 ### **Combined Client and Server Delay**
 
 ```bash
-# Test Case 6: 50% Client Delay and 50% Server Delay
+# Test Case 4: 50% Client Delay and 50% Server Delay
 python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
