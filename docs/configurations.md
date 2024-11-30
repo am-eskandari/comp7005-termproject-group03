@@ -88,8 +88,6 @@ This section explores the effects of packet drops without any delay interference
 
 --- 
 
-This updated table ensures the numbering aligns with the continuation from the previous section.
-
 ## **4. Client Drop + Delay Configurations**
 
 This table combines client-side drop and delay probabilities to observe how packet loss and latency interact for the
