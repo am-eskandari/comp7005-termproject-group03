@@ -3,6 +3,8 @@
 This document lists all the test cases to verify the reliability of the UDP protocol implementation under various drop
 and delay configurations. Use these commands to execute the tests and validate the protocol's behavior.
 
+---
+
 ## **Execution Steps**
 
 1. **Start the server**:
@@ -21,6 +23,38 @@ and delay configurations. Use these commands to execute the tests and validate t
     - Verify `log_client.csv`, `log_server.csv`, and `log_proxy.csv` for results.
 
 ---
+
+## **Sample Inputs for Client Side**
+
+Use these sample inputs to test the reliability of the communication protocol from the client side. They vary in length
+and complexity for comprehensive testing.
+
+1. **Short Message**
+   ```text
+   Hello, Server! This is a test message from the client.
+   ```
+
+2. **Medium-Length Message**
+   ```text
+   Reliable communication protocols are essential for maintaining seamless data transfer in unreliable networks.
+   ```
+
+3. **Long Message**
+   ```text
+   This project tests a reliable communication protocol using UDP. The system incorporates a proxy server to simulate real-world network conditions, including packet loss and delays, while dynamically adjusting parameters. The goal is to enhance data integrity and reliability over an unreliable medium.
+   ```
+
+4. **Repeating Pattern**
+   ```text
+   ABC123ABC123ABC123ABC123ABC123ABC123ABC123ABC123ABC123ABC123
+   ```
+
+5. **Edge Case (Symbols and Numbers)**
+   ```text
+   1234567890!@#$%^&*()_+-=~`<>?/.,[]{}|;:'"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+   ```
+
+--- 
 
 # Test Configurations
 
@@ -464,7 +498,26 @@ scenarios.
 ## **7. Additional Delay Time Test Cases**
 
 This section focuses on specific delay time configurations to evaluate the protocol's behavior under edge cases related
-to fixed and extended delay times.
+
+### **Server and Client Set-Up**
+
+For all the above tests, use the following commands to start the server and client:
+
+#### **1. Start the Server**
+
+```bash
+python3 server.py --listen-ip 127.0.0.1 --listen-port 5000
+```
+
+#### **2. Start the Proxy from the commands below**
+
+#### **3. Start the Client**
+
+```bash
+python3 client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
+```
+
+---
 
 ### **7.1 Fixed Delay Time Test**
 
@@ -539,24 +592,6 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ---
 
-### **Server and Client Commands**
-
-For all the above tests, use the following commands to start the server and client:
-
-#### **Start the Server**
-
-```bash
-python3 server.py --listen-ip 127.0.0.1 --listen-port 5000
-```
-
-#### **Start the Client**
-
-```bash
-python3 client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1
-```
-
----
-
 ## **8. Changing Parameters Dynamically**
 
 The proxy server supports **dynamic parameter updates** using the control socket (e.g., via **Netcat**). This allows you
@@ -593,7 +628,7 @@ to modify drop chances, delay probabilities, and delay times without restarting 
 
 ---
 
-### **8.2 Example Test Flow**
+### **8.2 Testing Dynamic Parameter Change During Run-Time**
 
 Below is an example of testing parameter changes dynamically.
 
@@ -621,25 +656,25 @@ Below is an example of testing parameter changes dynamically.
 2. **Modify Parameters Dynamically**  
    Test the effect of parameter changes step-by-step.
 
-    - **Set Client Drop Chance to 30%**  
+    - **Test Case 42: Set Client Drop Chance to 30%**  
       Introduce a moderate drop rate for client-to-server packets:
       ```bash
       echo "SET client-drop 0.3" | nc -u 127.0.0.1 4500
       ```
 
-    - **Set Server Delay to 50%**  
+    - **Test Case 43: Set Server Delay to 50%**  
       Simulate latency on server-to-client packets:
       ```bash
       echo "SET server-delay 0.5" | nc -u 127.0.0.1 4500
       ```
 
-    - **Set Client Delay Time to Fixed 200 ms**  
+    - **Test Case 44: Set Client Delay Time to Fixed 200 ms**  
       Introduce a consistent delay for client-to-server packets:
       ```bash
       echo "SET client-delay-time 200" | nc -u 127.0.0.1 4500
       ```
 
-    - **Set Server Drop Chance to 100%**  
+    - **Test Case 45: Set Server Drop Chance to 100%**  
       Simulate complete loss of server-to-client packets:
       ```bash
       echo "SET server-drop 1.0" | nc -u 127.0.0.1 4500
