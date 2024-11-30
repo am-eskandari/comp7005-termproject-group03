@@ -40,7 +40,7 @@ def update_proxy_parameters(control_ip, control_port, param, value):
     subprocess.run(command, shell=True)
 
 # Function to run the full test cycle
-def run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, timeout, control_port, params):
+def run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, timeout, params):
     # Start the server and proxy server
     server_process = start_server(server_ip, server_port)
     time.sleep(2)  # Wait for the server to start
@@ -63,9 +63,7 @@ def run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, tim
 
 # Main function to iterate through all combinations and run tests
 def main():
-    # server_ip = "192.168.1.2"  # Server machine IP
-    # proxy_ip = "192.168.1.3"   # Proxy machine IP
-    # control_ip = "192.168.1.3" # Control machine IP (where proxy is running)
+    # All components running on the same machine (use localhost)
     server_ip = "127.0.0.1"  # Server machine IP (localhost)
     proxy_ip = "127.0.0.1"   # Proxy machine IP (localhost)
     control_ip = "127.0.0.1" # Control machine IP (localhost)
@@ -85,7 +83,7 @@ def main():
             "server-delay-time": params[5]
         }
         print(f"Running test with parameters: {test_params}")
-        run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, timeout, control_port, test_params)
+        run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, timeout, test_params)
 
 if __name__ == "__main__":
     main()
