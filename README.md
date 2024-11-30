@@ -7,7 +7,12 @@ This project implements a **reliable communication protocol** using UDP, address
 
 The proxy server allows **dynamic parameter updates** via a dedicated **control socket**, enabling real-time adjustments without restarting the server.
 
-Check here for [test configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md).
+### Test Cases and Configurations:
+
+Check here for [combination of configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/configurations.md).
+
+Check here for [list of commands used to test the configurations](https://github.com/am-eskandari/comp7005-termproject-group03/blob/main/documents/tests.md).
+
 
 ---
 
