@@ -103,20 +103,28 @@ independently.
 ### **5. Combined Client and Server Drop + Delay Configurations**
 
 This table explores the interaction between drop and delay probabilities across both the client and server
-simultaneously.
+simultaneously. It ensures thorough testing of symmetric and asymmetric conditions, while avoiding redundancies with
+previous sections.
 
-- **Symmetric Configurations (Test Case 24):** Both client and server experience 50% drop and delay probabilities,
-  testing equal conditions on both ends.
-- **Asymmetric Configurations (Test Cases 25, 26):** The client experiences 100% drop and delay, while the server
-  experiences 50%, and vice versa, testing unbalanced conditions.
-- **Maximum Stress Configuration (Test Case 27):** Both client and server experience 100% drop and delay probabilities,
-  simulating the most challenging scenario.
+- **Symmetric Configurations:** Both client and server experience identical drop and delay probabilities (e.g., 50% drop
+  and 50% delay).
+- **Asymmetric Configurations:** The client and server experience differing drop and delay probabilities, such as 100%
+  client drop + delay and 50% server drop + delay.
+- **Maximum Stress Configuration:** Both client and server experience 100% drop and 100% delay probabilities, simulating
+  the most challenging scenario.
 
-| Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms)                              | Description                                       |
-|-----------|-----------------|-----------------|------------------|------------------|----------------------------------------------|---------------------------------------------------|
-| 24        | 50              | 50              | 50               | 50               | 100-500 (client-side), 200-600 (server-side) | 50% drop and delay on both client and server      |
-| 25        | 100             | 50              | 100              | 50               | 100-500 (client-side), 200-600 (server-side) | 100% client drop + delay, 50% server drop + delay |
-| 26        | 50              | 100             | 50               | 100              | 100-500 (client-side), 200-600 (server-side) | 50% client drop + delay, 100% server drop + delay |
-| 27        | 100             | 100             | 100              | 100              | 100-500 (client-side), 200-600 (server-side) | 100% drop and delay on both client and server     |
+| Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms)                              | Description                                          |
+|-----------|-----------------|-----------------|------------------|------------------|----------------------------------------------|------------------------------------------------------|
+| 24        | 50              | 50              | 50               | 50               | 100-500 (client-side), 200-600 (server-side) | 50% drop and delay on both client and server         |
+| 25        | 100             | 50              | 100              | 50               | 100-500 (client-side), 200-600 (server-side) | 100% client drop + delay, 50% server drop + delay    |
+| 26        | 50              | 100             | 50               | 100              | 100-500 (client-side), 200-600 (server-side) | 50% client drop + delay, 100% server drop + delay    |
+| 27        | 100             | 100             | 100              | 100              | 100-500 (client-side), 200-600 (server-side) | 100% drop and delay on both client and server        |
+| 28        | 50              | 0               | 50               | 100              | 100-500 (client-side), 200-600 (server-side) | 50% client drop + delay, server delay only           |
+| 29        | 0               | 50              | 100              | 50               | 100-500 (client-side), 200-600 (server-side) | Server drop + delay, client delay only               |
+| 30        | 50              | 100             | 100              | 0                | 100-500 (client-side)                        | 50% client drop, 100% client delay, server drop only |
+| 31        | 100             | 50              | 0                | 100              | 200-600 (server-side)                        | 100% server drop, 50% server delay, client drop only |
+| 32        | 50              | 100             | 50               | 0                | 100-500 (client-side)                        | 50% client drop, server drop only                    |
+| 33        | 0               | 50              | 50               | 50               | 100-500 (client-side), 200-600 (server-side) | Client delay + server drop and delay                 |
+| 34        | 50              | 0               | 100              | 50               | 100-500 (client-side), 200-600 (server-side) | Client drop + delay, server delay only               |
 
 ---
