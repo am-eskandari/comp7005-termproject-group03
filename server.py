@@ -20,7 +20,7 @@ def udp_server(listen_ip, listen_port):
 
     # Initialize sequence tracking and logging
     expected_sequence_number = 1  # Tracks the next expected sequence number
-    csv_file_path = "log_server.csv"
+    csv_file_path = "data/log_server.csv"
 
     # Open the CSV file for logging
     with open(csv_file_path, "w", newline="") as csv_file:

@@ -26,7 +26,7 @@ dedup_cache = {
 
 CACHE_TIMEOUT = 10  # Time in seconds to keep sequence numbers in cache
 
-LOG_FILE = "log_proxy.csv"
+LOG_FILE = "data/log_proxy.csv"
 
 # Initialize the log file
 with open(LOG_FILE, "w", newline="") as csv_file:
