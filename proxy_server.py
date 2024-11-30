@@ -6,6 +6,7 @@ import threading
 import json
 import csv
 from datetime import datetime
+import re
 
 # Shared proxy configuration
 proxy_config = {
@@ -13,8 +14,8 @@ proxy_config = {
     "server-drop": 0.0,
     "client-delay": 0.0,
     "server-delay": 0.0,
-    "client-delay-time": 0.0,  # Now in milliseconds
-    "server-delay-time": 0.0,  # Now in milliseconds
+    "client-delay-time": (0, 0),  # Tuple for range (min, max) in milliseconds
+    "server-delay-time": (0, 0),  # Tuple for range (min, max) in milliseconds
 }
 
 # Cache for deduplication
@@ -37,6 +38,14 @@ with open(LOG_FILE, "w", newline="") as csv_file:
     ])
 
 
+def parse_delay(value):
+    """Parse fixed or range delay values."""
+    match = re.match(r'(\d+)-(\d+)', value)
+    if match:
+        return int(match.group(1)), int(match.group(2))  # Return range as tuple
+    return int(value), int(value)  # Return fixed value as a range with the same start and end
+
+
 def log_event(event, seq_number, ack_number, src_ip, src_port, dest_ip, dest_port, message, latency, drop_chance, delay_chance, delay_time):
     """Log an event to the CSV file."""
     with open(LOG_FILE, "a", newline="") as csv_file:
@@ -56,7 +65,7 @@ def clear_expired_cache():
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="UDP Proxy Server with Logging")
+    parser = argparse.ArgumentParser(description="UDP Proxy Server with Logging and Delay Ranges")
     parser.add_argument('--listen-ip', required=True, help="Proxy server IP address")
     parser.add_argument('--listen-port', type=int, required=True, help="Proxy server port")
     parser.add_argument('--target-ip', required=True, help="Target server IP address")
@@ -65,10 +74,10 @@ def parse_arguments():
     parser.add_argument('--server-drop', type=float, default=0.0, help="Drop chance (0.0 to 1.0) for server-to-client")
     parser.add_argument('--client-delay', type=float, default=0.0, help="Delay chance (0.0 to 1.0) for client-to-server")
     parser.add_argument('--server-delay', type=float, default=0.0, help="Delay chance (0.0 to 1.0) for server-to-client")
-    parser.add_argument('--client-delay-time', type=float, default=0.0,
-                        help="Delay time for client-to-server in milliseconds")
-    parser.add_argument('--server-delay-time', type=float, default=0.0,
-                        help="Delay time for server-to-client in milliseconds")
+    parser.add_argument('--client-delay-time', type=str, default="0",
+                        help="Delay time for client-to-server in milliseconds (fixed or range, e.g., 100-500)")
+    parser.add_argument('--server-delay-time', type=str, default="0",
+                        help="Delay time for server-to-client in milliseconds (fixed or range, e.g., 100-500)")
     parser.add_argument('--control-port', type=int, default=4500, help="Port for dynamic configuration control")
     return parser.parse_args()
 
@@ -83,6 +92,8 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
     while True:
         try:
+            delay_time = 0  # Initialize delay_time to avoid unassigned variable error
+
             # Receive data from client or server
             start_time = datetime.now()
             data, addr = proxy_socket.recvfrom(65507)
@@ -108,7 +119,7 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                 # Deduplication for client-to-server
                 if not is_ack and seq_number in dedup_cache["client_to_server"]:
                     print(f"🔄 [Client -> Server] Duplicate packet [SEQ {seq_number}] from {addr}. Ignored.")
-                    log_event("Duplicate", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"], 0)
+                    log_event("Duplicate", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"], delay_time)
                     continue
 
                 if not is_ack:
@@ -116,27 +127,29 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
                 if random.random() < proxy_config["client-drop"]:
                     print(f"❌ [Client -> Server] Dropped packet [SEQ {seq_number}] from {addr}")
-                    log_event("Dropped", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"], 0)
+                    log_event("Dropped", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"], delay_time)
                     continue
+
                 if random.random() < proxy_config["client-delay"]:
-                    delay_time = proxy_config["client-delay-time"] / 1000  # Convert ms to seconds
+                    delay_time = random.randint(*proxy_config["client-delay-time"]) / 1000  # Convert ms to seconds
                     print(f"⏳ [Client -> Server] Delayed packet [SEQ {seq_number}] from {addr} "
                           f"for {delay_time * 1000:.2f} ms")
                     time.sleep(delay_time)
+
                 destination = (server_ip, server_port)
                 print(f"✅ [Client -> Server] Forwarded packet [SEQ {seq_number}] to {destination}")
-                log_event("Forwarded", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"], proxy_config["client-delay-time"])
+                log_event("Forwarded", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"], delay_time * 1000)
             else:
                 # Packet from the server
                 if not client_address:
                     print("⚠️ No client address to forward to. Dropping packet.")
-                    log_event("Dropped", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["server-drop"], proxy_config["server-delay"], 0)
+                    log_event("Dropped", seq_number, None, addr[0], addr[1], server_ip, server_port, message_content, latency, proxy_config["server-drop"], proxy_config["server-delay"], delay_time)
                     continue
 
                 # Deduplication for server-to-client
                 if is_ack and seq_number in dedup_cache["server_to_client"]:
                     print(f"🔄 [Server -> Client] Duplicate acknowledgment [ACK {seq_number}] from {addr}. Ignored.")
-                    log_event("Duplicate", seq_number, seq_number, addr[0], addr[1], client_address[0], client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"], 0)
+                    log_event("Duplicate", seq_number, seq_number, addr[0], addr[1], client_address[0], client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"], delay_time)
                     continue
 
                 if is_ack:
@@ -144,16 +157,18 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
                 if random.random() < proxy_config["server-drop"]:
                     print(f"❌ [Server -> Client] Dropped packet [SEQ {seq_number}] from {addr}")
-                    log_event("Dropped", seq_number, None, addr[0], addr[1], client_address[0], client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"], 0)
+                    log_event("Dropped", seq_number, None, addr[0], addr[1], client_address[0], client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"], delay_time)
                     continue
+
                 if random.random() < proxy_config["server-delay"]:
-                    delay_time = proxy_config["server-delay-time"] / 1000  # Convert ms to seconds
+                    delay_time = random.randint(*proxy_config["server-delay-time"]) / 1000  # Convert ms to seconds
                     print(f"⏳ [Server -> Client] Delayed packet [SEQ {seq_number}] from {addr} "
                           f"for {delay_time * 1000:.2f} ms")
                     time.sleep(delay_time)
+
                 destination = client_address
                 print(f"✅ [Server -> Client] Forwarded packet [SEQ {seq_number}] to {destination}")
-                log_event("Forwarded", seq_number, seq_number, addr[0], addr[1], client_address[0], client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"], proxy_config["server-delay-time"])
+                log_event("Forwarded", seq_number, seq_number, addr[0], addr[1], client_address[0], client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"], delay_time * 1000)
 
             # Forward the packet
             proxy_socket.sendto(data, destination)
@@ -175,13 +190,15 @@ def handle_control(control_socket):
 
             if command.startswith("SET"):
                 _, param, value = command.split()
-                value = float(value)
-                if param in proxy_config:
-                    proxy_config[param] = value
-                    response = f"✅ Updated {param} to {value}"
-                    print(f"🔧 {response}")
+                if param in ["client-delay-time", "server-delay-time"]:
+                    proxy_config[param] = parse_delay(value)  # Parse range or fixed
+                elif param in proxy_config:
+                    proxy_config[param] = float(value)
                 else:
-                    response = f"❌ Invalid parameter: {param}"
+                    raise ValueError(f"❌ Invalid parameter: {param}")
+
+                response = f"✅ Updated {param} to {value}"
+                print(f"🔧 {response}")
                 control_socket.sendto(response.encode(), addr)
 
             elif command.startswith("GET"):
@@ -206,8 +223,8 @@ def main():
     proxy_config["server-drop"] = args.server_drop
     proxy_config["client-delay"] = args.client_delay
     proxy_config["server-delay"] = args.server_delay
-    proxy_config["client-delay-time"] = args.client_delay_time
-    proxy_config["server-delay-time"] = args.server_delay_time
+    proxy_config["client-delay-time"] = parse_delay(args.client_delay_time)
+    proxy_config["server-delay-time"] = parse_delay(args.server_delay_time)
 
     # Set up proxy socket
     proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
