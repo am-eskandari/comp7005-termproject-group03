@@ -165,6 +165,8 @@ The proxy server supports **dynamic parameter updates** using the control socket
 
 ### **Steps to Change Parameters**
 
+---
+
 1. Send a command to the control socket:
    ```bash
    echo "SET <PARAMETER> <VALUE>" | nc -u <CONTROL_IP> <CONTROL_PORT>
