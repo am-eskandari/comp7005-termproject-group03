@@ -11,8 +11,8 @@ proxy_config = {
     "server-drop": 0.0,
     "client-delay": 0.0,
     "server-delay": 0.0,
-    "client-delay-time": 0.0,
-    "server-delay-time": 0.0,
+    "client-delay-time": 0.0,  # Now in milliseconds
+    "server-delay-time": 0.0,  # Now in milliseconds
 }
 
 # Cache for deduplication
@@ -42,8 +42,10 @@ def parse_arguments():
     parser.add_argument('--server-drop', type=float, default=0.0, help="Drop chance (0.0 to 1.0) for server-to-client")
     parser.add_argument('--client-delay', type=float, default=0.0, help="Delay chance (0.0 to 1.0) for client-to-server")
     parser.add_argument('--server-delay', type=float, default=0.0, help="Delay chance (0.0 to 1.0) for server-to-client")
-    parser.add_argument('--client-delay-time', type=float, default=0.0, help="Delay time for client-to-server (seconds)")
-    parser.add_argument('--server-delay-time', type=float, default=0.0, help="Delay time for server-to-client (seconds)")
+    parser.add_argument('--client-delay-time', type=float, default=0.0,
+                        help="Delay time for client-to-server in milliseconds")
+    parser.add_argument('--server-delay-time', type=float, default=0.0,
+                        help="Delay time for server-to-client in milliseconds")
     parser.add_argument('--control-port', type=int, default=4500, help="Port for dynamic configuration control")
     return parser.parse_args()
 
@@ -87,9 +89,10 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                     print(f"❌ [Client -> Server] Dropped packet [SEQ {seq_number}] from {addr}")
                     continue
                 if random.random() < proxy_config["client-delay"]:
+                    delay_time = proxy_config["client-delay-time"] / 1000  # Convert ms to seconds
                     print(f"⏳ [Client -> Server] Delayed packet [SEQ {seq_number}] from {addr} "
-                          f"for {proxy_config['client-delay-time']} seconds")
-                    time.sleep(proxy_config["client-delay-time"])
+                          f"for {delay_time * 1000:.2f} ms")
+                    time.sleep(delay_time)
                 destination = (server_ip, server_port)
                 print(f"✅ [Client -> Server] Forwarded packet [SEQ {seq_number}] to {destination}")
             else:
@@ -110,9 +113,10 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                     print(f"❌ [Server -> Client] Dropped packet [SEQ {seq_number}] from {addr}")
                     continue
                 if random.random() < proxy_config["server-delay"]:
+                    delay_time = proxy_config["server-delay-time"] / 1000  # Convert ms to seconds
                     print(f"⏳ [Server -> Client] Delayed packet [SEQ {seq_number}] from {addr} "
-                          f"for {proxy_config['server-delay-time']} seconds")
-                    time.sleep(proxy_config["server-delay-time"])
+                          f"for {delay_time * 1000:.2f} ms")
+                    time.sleep(delay_time)
                 destination = client_address
                 print(f"✅ [Server -> Client] Forwarded packet [SEQ {seq_number}] to {destination}")
 
