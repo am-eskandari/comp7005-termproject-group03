@@ -15,33 +15,56 @@ parameters. Below is an explanation for each table and the reasoning behind the 
 
 ---
 
-### **1. Base Case and Delay Configurations (No Drop)**
+## **1. Base Case (No Drop or Delay)**
 
-This table isolates delay configurations without introducing any packet drops. It serves as a baseline for understanding
-the impact of delays alone.
+This section serves as the control test, verifying the functionality of the system under ideal conditions with no drop
+or delay configurations.
 
-- **Base Case (Test Case 1):** No drop or delay, serving as the control test to verify that the system works without
-  interference.
-- **Client Delay Only (Test Cases 2, 5):** Tests the impact of 50% and 100% delay probabilities on the client side while
-  keeping the server unaffected.
-- **Server Delay Only (Test Cases 3, 6):** Tests the impact of 50% and 100% delay probabilities on the server side while
-  keeping the client unaffected.
-- **Combined Client and Server Delay (Test Cases 4, 7):** Evaluates scenarios where both client and server experience
-  delays simultaneously, using 50% or 100% probabilities for each.
+| Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms) | Description                  |
+|-----------|-----------------|-----------------|------------------|------------------|-----------------|------------------------------|
+| 1         | 0               | 0               | 0                | 0                | 0               | No drop or delay (Base Case) |
+
+---
+
+## **2. Delay Configurations (No Drop)**
+
+This section explores the impact of delay configurations on the client and server, including various combinations of
+delay probabilities.
+
+#### **Client Delay Only**
+
+- **Test Case 2:** 50% delay probability on the client side, server unaffected.
+- **Test Case 5:** 100% delay probability on the client side, server unaffected.
+
+#### **Server Delay Only**
+
+- **Test Case 3:** 50% delay probability on the server side, client unaffected.
+- **Test Case 6:** 100% delay probability on the server side, client unaffected.
+
+#### **Combined Client and Server Delay**
+
+- **Test Case 4:** 50% delay probability on both client and server sides.
+- **Test Case 7:** 100% delay probability on both client and server sides.
+
+#### **Mixed Client and Server Delay**
+
+- **Test Case 8:** 50% delay on the client side and 100% delay on the server side.
+- **Test Case 9:** 100% delay on the client side and 50% delay on the server side.
 
 | Test Case | Client Drop (%) | Server Drop (%) | Client Delay (%) | Server Delay (%) | Delay Time (ms)                              | Description                          |
 |-----------|-----------------|-----------------|------------------|------------------|----------------------------------------------|--------------------------------------|
-| 1         | 0               | 0               | 0                | 0                | 0                                            | No drop or delay (Base Case)         |
 | 2         | 0               | 0               | 50               | 0                | 100-500 (client-side)                        | 50% delay on client only             |
 | 3         | 0               | 0               | 0                | 50               | 200-600 (server-side)                        | 50% delay on server only             |
 | 4         | 0               | 0               | 50               | 50               | 100-500 (client-side), 200-600 (server-side) | 50% delay on both client and server  |
 | 5         | 0               | 0               | 100              | 0                | 100-500 (client-side)                        | 100% delay on client only            |
 | 6         | 0               | 0               | 0                | 100              | 200-600 (server-side)                        | 100% delay on server only            |
 | 7         | 0               | 0               | 100              | 100              | 100-500 (client-side), 200-600 (server-side) | 100% delay on both client and server |
+| 8         | 0               | 0               | 50               | 100              | 100-500 (client-side), 200-600 (server-side) | 50% delay on client, 100% on server  |
+| 9         | 0               | 0               | 100              | 50               | 100-500 (client-side), 200-600 (server-side) | 100% delay on client, 50% on server  |
 
 ---
 
-### **2. Drop Configurations (No Delay)**
+### **3. Drop Configurations (No Delay)**
 
 This table focuses exclusively on drop scenarios to understand the effects of packet loss without any delay
 interference.
