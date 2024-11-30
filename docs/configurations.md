@@ -90,7 +90,7 @@ This section explores the effects of packet drops without any delay interference
 
 This updated table ensures the numbering aligns with the continuation from the previous section.
 
-## **3. Client Drop + Delay Configurations**
+## **4. Client Drop + Delay Configurations**
 
 This table combines client-side drop and delay probabilities to observe how packet loss and latency interact for the
 client.
@@ -107,7 +107,7 @@ client.
 
 ---
 
-## **4. Server Drop + Delay Configurations**
+## **5. Server Drop + Delay Configurations**
 
 This table combines server-side drop and delay probabilities to analyze how these factors affect server behavior
 independently.
@@ -124,7 +124,7 @@ independently.
 
 ---
 
-## **5. Combined Client and Server Drop + Delay Configurations**
+## **6. Combined Client and Server Drop + Delay Configurations**
 
 This table explores the interaction between drop and delay probabilities across both the client and server
 simultaneously. It ensures thorough testing of symmetric and asymmetric conditions, while avoiding redundancies with
