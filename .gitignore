@@ -162,11 +162,16 @@ cython_debug/
 .idea/
 
 
+
+# CUSTOMSET .GITIGNORE RULES -------------------------------------------------------------------------------------------
+
 #Log files
 #data/log_client.csv
 #data/log_server.csv
 #data/log_proxy.csv
-
 log_client.csv
 log_server.csv
 log_proxy.csv
+
+# Misc
+repo_structure.txt
