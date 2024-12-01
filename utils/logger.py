@@ -1,35 +1,39 @@
-import csv
 import logging
 from logging.handlers import RotatingFileHandler
 
-# Set up logger for packet events
-logger = logging.getLogger('packet_logger')
-logger.setLevel(logging.INFO)
-log_handler = RotatingFileHandler('packet_logs.log', maxBytes=5 * 1024 * 1024,
-                                  backupCount=2)  # Rotate every 5MB, keep 2 backups
-formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
-log_handler.setFormatter(formatter)
-logger.addHandler(log_handler)
 
-
-def initialize_log(log_file_path, headers):
+def create_logger(logger_name, log_file_name):
     """
-    Initialize the CSV log file with headers.
+    Create a logger for a specific component (client, server, proxy).
 
     Args:
-        log_file_path (str): Path to the log file.
-        headers (list): List of headers for the CSV file.
+        logger_name (str): Name of the logger.
+        log_file_name (str): Path to the log file.
+
+    Returns:
+        logging.Logger: Configured logger.
     """
-    with open(log_file_path, "w", newline="") as csv_file:
-        csv_writer = csv.writer(csv_file)
-        csv_writer.writerow(headers)
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+
+    # Create handler for rotating logs
+    log_handler = RotatingFileHandler(log_file_name, maxBytes=5 * 1024 * 1024, backupCount=2)
+    formatter = logging.Formatter('%(asctime)s, %(levelname)s, %(message)s')
+    log_handler.setFormatter(formatter)
+
+    # Avoid adding multiple handlers if the logger is used more than once
+    if not logger.hasHandlers():
+        logger.addHandler(log_handler)
+
+    return logger
 
 
-def log_event(event, sequence, acknowledgment, src_ip, src_port, dest_ip, dest_port, message, latency):
+def log_event(logger, event, sequence, acknowledgment, src_ip, src_port, dest_ip, dest_port, message, latency):
     """
     Log an event using the rotating logger.
 
     Args:
+        logger (logging.Logger): Logger instance (client, server, proxy).
         event (str): The type of event to log.
         sequence (int): The sequence number of the packet.
         acknowledgment (int or None): The acknowledgment number, if applicable.
@@ -42,3 +46,9 @@ def log_event(event, sequence, acknowledgment, src_ip, src_port, dest_ip, dest_p
     """
     log_message = f"{event}, {sequence}, {acknowledgment}, {src_ip}, {src_port}, {dest_ip}, {dest_port}, {message}, {latency}"
     logger.info(log_message)
+
+
+# Loggers for each module
+client_logger = create_logger('client_logger', 'client_packet_logs.log')
+server_logger = create_logger('server_logger', 'server_packet_logs.log')
+proxy_logger = create_logger('proxy_logger', 'proxy_packet_logs.log')
