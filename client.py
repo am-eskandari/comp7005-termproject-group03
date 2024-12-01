@@ -35,7 +35,10 @@ def udp_client(server_ip, server_port, timeout=2):
                 # Get the message input from the user
                 message = input("📤 Enter message to send (or type 'exit' to quit): ")
                 if message.lower() == "exit":
-                    print("👋 Exiting client. Goodbye!")
+                    # Send a termination message to the server
+                    terminate_message = "TERMINATE"
+                    client_socket.sendto(terminate_message.encode(), (server_ip, server_port))
+                    print("👋 Sent termination message to server. Exiting client.")
                     break
 
                 # Prepare the message with the sequence number
