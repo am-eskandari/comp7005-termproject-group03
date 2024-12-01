@@ -36,13 +36,13 @@ def validate_port(port):
 def validate_chance(chance):
     """Validate drop or delay chance values."""
     try:
-        if not isinstance(chance, str) or chance.isdigit():
-            raise ValueError(f"Chance value should be a decimal number. Got: {chance}")
+        # Convert the input to a float, regardless of type (handles strings or numbers)
         chance = float(chance)
+        # Ensure the value is within the range [0.0, 1.0]
         if not (0.0 <= chance <= 1.0):
-            raise ValueError
-    except ValueError:
-        print(f"❌ Invalid chance value: {chance}. Must be a float between 0.0 and 1.0.")
+            raise ValueError(f"Chance value must be between 0.0 and 1.0. Got: {chance}")
+    except ValueError as e:
+        print(f"❌ Invalid chance value: {e}")
         exit(1)
     return chance
 
@@ -50,19 +50,18 @@ def validate_chance(chance):
 def validate_delay_time(delay_time):
     """Validate delay time in milliseconds or range."""
     try:
-        if not isinstance(delay_time, str) or delay_time.isdigit():
-            raise ValueError(f"Delay time should be a positive integer or range. Got: {delay_time}")
         if "-" in delay_time:
             min_val, max_val = map(int, delay_time.split("-"))
+            # Validate that both values are positive and min is not greater than max
             if min_val < 0 or max_val < 0 or min_val > max_val:
-                raise ValueError(
-                    f"Invalid delay range: {delay_time}. Minimum value must be less than or equal to maximum value, and both must be non-negative.")
+                raise ValueError
             return min_val, max_val
         else:
             delay = int(delay_time)
+            # Validate that the delay is non-negative (0 or positive)
             if delay < 0:
-                raise ValueError(f"Delay time must be non-negative. Got: {delay}")
+                raise ValueError
             return delay, delay
-    except ValueError as e:
-        print(f"❌ {e}")
+    except ValueError:
+        print(f"❌ Invalid delay time: {delay_time}. Must be a non-negative integer or range (e.g., '100-500').")
         exit(1)

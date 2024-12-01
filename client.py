@@ -2,7 +2,7 @@ import argparse
 import socket
 from datetime import datetime
 
-from utils.logger import log_event
+from utils.logger import client_logger, log_event
 from utils.validation import validate_ip, validate_port
 
 
@@ -74,7 +74,7 @@ def udp_client(server_ip, server_port, timeout=2):
                           f"(From {source_ip}:{source_port} to {server_ip}:{server_port})")
 
                     # Log the sent event
-                    log_event("Sent", sequence_number, None,
+                    log_event(client_logger, "Sent", sequence_number, None,
                               source_ip, source_port, server_ip, server_port, message, None)
 
                     # Wait for an acknowledgment
@@ -93,28 +93,27 @@ def udp_client(server_ip, server_port, timeout=2):
                     if ack == sequence_number:
                         latency_ms = (receive_time - send_time).total_seconds() * 1000
                         print(f"📥 [ACK {ack}] Received from {addr} (Latency: {latency_ms:.2f} ms)\n")
-                        log_event("Acknowledged", sequence_number, ack,
-                                  addr[0], addr[1], server_ip, server_port, None, f"{latency_ms:.2f}")
+                        log_event(client_logger, "Acknowledged", sequence_number, ack,
+                                  addr[0], addr[1], server_ip, server_port, None, latency_ms)
                         sequence_number += 1  # Increment the sequence number for the next message
                         break  # Exit the retry loop on successful acknowledgment
                     else:
                         print(f"⚠️ Unexpected ACK: {ack} (Expected: {sequence_number})")
-                        log_event("Unexpected ACK", sequence_number, ack,
+                        log_event(client_logger, "Unexpected ACK", sequence_number, ack,
                                   addr[0], addr[1], server_ip, server_port, None, None)
 
                 except socket.timeout:
                     # Log the retransmit event
                     if source_ip is not None and source_port is not None:
-                        log_event("Retransmit", sequence_number, None,
+                        log_event(client_logger, "Retransmit", sequence_number, None,
                                   source_ip, source_port, server_ip, server_port, message, None)
                     print(f"⏳ Timeout! Retrying... (Attempt {attempt + 1})")
             else:
                 # If all attempts fail, notify the user and log the failure
                 if source_ip is not None and source_port is not None:
-                    log_event("Failed", sequence_number, None,
+                    log_event(client_logger, "Failed", sequence_number, None,
                               source_ip, source_port, server_ip, server_port, message, None)
                 print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 10 attempts.\n")
-
 
     except KeyboardInterrupt:
         print("\n👋 Exiting client. Sending termination message to server...")

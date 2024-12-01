@@ -35,16 +35,18 @@ def log_event(logger, event, sequence, acknowledgment, src_ip, src_port, dest_ip
     Args:
         logger (logging.Logger): Logger instance (client, server, proxy).
         event (str): The type of event to log.
-        sequence (int): The sequence number of the packet.
+        sequence (int or None): The sequence number of the packet, or None if not applicable.
         acknowledgment (int or None): The acknowledgment number, if applicable.
         src_ip (str): Source IP address.
         src_port (int): Source port number.
         dest_ip (str): Destination IP address.
         dest_port (int): Destination port number.
         message (str or None): Message content, if applicable.
-        latency (str or None): Latency in milliseconds, if applicable.
+        latency (float or None): Latency in milliseconds, if applicable.
     """
-    log_message = f"{event}, {sequence}, {acknowledgment}, {src_ip}, {src_port}, {dest_ip}, {dest_port}, {message}, {latency}"
+    sequence_str = str(sequence) if sequence is not None else "N/A"
+    acknowledgment_str = str(acknowledgment) if acknowledgment is not None else "N/A"
+    log_message = f"{event}, {sequence_str}, {acknowledgment_str}, {src_ip}, {src_port}, {dest_ip}, {dest_port}, {message}, {latency}"
     logger.info(log_message)
 
 

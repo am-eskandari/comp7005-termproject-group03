@@ -1,24 +1,24 @@
 import argparse
-import csv
 import socket
 from datetime import datetime
 
-from utils.validation import validate_ip, validate_port  # Import validation functions
+from utils.logger import server_logger, log_event
+from utils.validation import validate_ip, validate_port
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="UDP Server with Latency Tracking")
     parser.add_argument('--listen-ip', required=True, help="IP address to bind")
     parser.add_argument('--listen-port', required=True, help="Port to listen on")
-    args = parser.parse_args()
+    arguments = parser.parse_args()
 
     # Validate and process IP
-    args.listen_ip = validate_ip(args.listen_ip)
+    arguments.listen_ip = validate_ip(arguments.listen_ip)
 
     # Validate and process port
-    args.listen_port = validate_port(args.listen_port)
+    arguments.listen_port = validate_port(arguments.listen_port)
 
-    return args
+    return arguments
 
 
 def udp_server(listen_ip, listen_port):
@@ -28,78 +28,69 @@ def udp_server(listen_ip, listen_port):
     server_socket.bind((listen_ip, listen_port))
     print(f"🚀 Server started and listening on {listen_ip}:{listen_port}")
 
-    # Initialize sequence tracking and logging
+    # Initialize sequence tracking
     expected_sequence_number = 1  # Tracks the next expected sequence number
-    csv_file_path = "log_server.csv"
 
-    # Open the CSV file for logging
-    with open(csv_file_path, "w", newline="") as csv_file:
-        csv_writer = csv.writer(csv_file)
-        # Write the CSV header
-        csv_writer.writerow(["Timestamp", "Event", "Sequence", "Acknowledgment",
-                             "Source IP", "Source Port", "Destination IP", "Destination Port",
-                             "Message", "Latency (ms)"])
+    print("\n🗑 Waiting for messages...\n")
 
-        print("\n📝 Waiting for messages...\n")
+    while True:
+        try:
+            # Receive data from the client
+            start_time = datetime.now()
+            data, addr = server_socket.recvfrom(65507)
+            receive_time = datetime.now()
+            latency_ms = (receive_time - start_time).total_seconds() * 1000
 
-        while True:
-            try:
-                # Receive data from the client
-                start_time = datetime.now()
-                data, addr = server_socket.recvfrom(65507)
-                receive_time = datetime.now()
-                latency_ms = (receive_time - start_time).total_seconds() * 1000
+            if not data:
+                print(f"⚠️ Received an empty message from {addr}")
+            else:
+                # Decode the data
+                decoded_data = data.decode()
 
-                if not data:
-                    print(f"⚠️ Received an empty message from {addr}")
+                # Check if the message is a termination signal
+                if decoded_data == "TERMINATE":
+                    print(f"👋 Client {addr} has terminated the session. Resetting sequence.")
+                    expected_sequence_number = 1  # Reset sequence number for new clients
+                    log_event(server_logger, "Terminate", expected_sequence_number, None, addr[0], addr[1], listen_ip,
+                              listen_port, None, latency_ms)
+                    continue
+
+                # Extract the sequence number and message
+                sequence_number, message = decoded_data.split(":", 1)
+                sequence_number = int(sequence_number)
+
+                # Check if the received sequence number matches the expected one
+                if sequence_number == expected_sequence_number:
+                    print(f"✅ [SEQ {sequence_number}] Received: '{message}' from {addr}")
+                    event = "Received"
+                    expected_sequence_number += 1  # Increment the expected sequence number
                 else:
-                    # Decode the data
-                    decoded_data = data.decode()
+                    print(
+                        f"🔄 [OUT-OF-ORDER] Expected SEQ {expected_sequence_number}, "
+                        f"but got SEQ {sequence_number} from {addr}"
+                    )
+                    event = "Out-of-Order"
 
-                    # Check if the message is a termination signal
-                    if decoded_data == "TERMINATE":
-                        print(f"👋 Client {addr} has terminated the session. Resetting sequence.")
-                        expected_sequence_number = 1  # Reset sequence number for new clients
-                        csv_writer.writerow([receive_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
-                                             "Terminate", None, None,
-                                             addr[0], addr[1], listen_ip, listen_port,
-                                             None, f"{latency_ms:.2f}"])
-                        continue
+                # Log the received event
+                log_event(server_logger, event, sequence_number, None, addr[0], addr[1], listen_ip, listen_port,
+                          message, latency_ms)
 
-                    # Extract the sequence number and message
-                    sequence_number, message = decoded_data.split(":", 1)
-                    sequence_number = int(sequence_number)
+                # Send acknowledgment back with the sequence number
+                ack_message = f"ACK:{sequence_number}"
+                server_socket.sendto(ack_message.encode(), addr)
+                print(f"📤 Sent acknowledgment: {ack_message} (Latency: {latency_ms:.2f} ms)\n")
 
-                    # Check if the received sequence number matches the expected one
-                    if sequence_number == expected_sequence_number:
-                        print(f"✅ [SEQ {sequence_number}] Received: '{message}' from {addr}")
-                        event = "Received"
-                        expected_sequence_number += 1  # Increment the expected sequence number
-                    else:
-                        print(
-                            f"🔄 [OUT-OF-ORDER] Expected SEQ {expected_sequence_number}, "
-                            f"but got SEQ {sequence_number} from {addr}"
-                        )
-                        event = "Out-of-Order"
+                # Log the acknowledgment event
+                log_event(server_logger, "Acknowledged", sequence_number, sequence_number, listen_ip, listen_port,
+                          addr[0], addr[1], None, latency_ms)
 
-                    # Send acknowledgment back with the sequence number
-                    ack_message = f"ACK:{sequence_number}"
-                    server_socket.sendto(ack_message.encode(), addr)
-                    print(f"📤 Sent acknowledgment: {ack_message} (Latency: {latency_ms:.2f} ms)\n")
-
-                    # Log the event to the CSV
-                    csv_writer.writerow([receive_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
-                                         event, sequence_number, sequence_number,
-                                         addr[0], addr[1], listen_ip, listen_port,
-                                         message, f"{latency_ms:.2f}"])
-
-            except KeyboardInterrupt:
-                print("\n👋 Server shutting down. Goodbye!")
-                break
-            except Exception as e:
-                print(f"❌ Error while processing message: {e}")
+        except KeyboardInterrupt:
+            print("\n👋 Server shutting down. Goodbye!")
+            break
+        except Exception as e:
+            print(f"❌ Error while processing message: {e}")
 
 
 if __name__ == "__main__":
-    args = parse_arguments()
-    udp_server(args.listen_ip, args.listen_port)
+    parsed_args = parse_arguments()
+    udp_server(parsed_args.listen_ip, parsed_args.listen_port)

@@ -1,11 +1,11 @@
 import argparse
-import csv
 import random
 import socket
 import threading
 import time
 from datetime import datetime
 
+from utils.logger import proxy_logger, log_event
 from utils.utils import handle_control
 from utils.validation import validate_ip, validate_port, validate_chance, validate_delay_time
 
@@ -26,28 +26,6 @@ dedup_cache = {
 }
 
 CACHE_TIMEOUT = 10  # Time in seconds to keep sequence numbers in cache
-
-LOG_FILE = "log_proxy.csv"
-
-# Initialize the log file
-with open(LOG_FILE, "w", newline="") as csv_file:
-    csv_writer = csv.writer(csv_file)
-    csv_writer.writerow([
-        "Timestamp", "Direction", "Event", "Sequence", "Acknowledgment",
-        "Source IP", "Source Port", "Destination IP", "Destination Port",
-        "Message", "Latency (ms)", "Drop Chance", "Delay Chance", "Delay Time (ms)"
-    ])
-
-
-def log_event(direction, event, seq_number, ack_number, src_ip, src_port, dest_ip, dest_port, message, latency,
-              drop_chance, delay_chance, delay_time):
-    """Log an event to the CSV file."""
-    with open(LOG_FILE, "a", newline="") as csv_file:
-        csv_writer = csv.writer(csv_file)
-        csv_writer.writerow([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), direction, event, seq_number, ack_number,
-            src_ip, src_port, dest_ip, dest_port, message, latency, drop_chance, delay_chance, delay_time
-        ])
 
 
 def clear_expired_cache():
@@ -116,8 +94,8 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                 print(f"🚨 [Client -> Server] Termination message received from {addr}. Forwarding immediately.")
                 destination = (server_ip, server_port)
                 proxy_socket.sendto(data, destination)
-                log_event("CTS", "Terminate", None, None, addr[0], addr[1], server_ip, server_port,
-                          message, None, 0.0, 0.0, 0.0)  # Log as bypassed with no delay or drop
+                log_event(proxy_logger, 'Terminate', None, None, addr[0], addr[1], server_ip, server_port,
+                          message, None)
                 continue
 
             # Check if the message is an acknowledgment
@@ -140,9 +118,8 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                 # Deduplication for client-to-server
                 if not is_ack and seq_number in dedup_cache["client_to_server"]:
                     print(f"🔄 [Client -> Server] Duplicate packet [SEQ {seq_number}] from {addr}. Ignored.")
-                    log_event("CTS", "Duplicate", seq_number, None, addr[0], addr[1], server_ip, server_port,
-                              message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"],
-                              delay_time)
+                    log_event(proxy_logger, 'Duplicate', seq_number, None, addr[0], addr[1], server_ip,
+                              server_port, message_content, latency)
                     continue
 
                 if not is_ack:
@@ -150,37 +127,33 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
                 if random.random() < proxy_config["client-drop"]:
                     print(f"❌ [Client -> Server] Dropped packet [SEQ {seq_number}] from {addr}")
-                    log_event("CTS", "Dropped", seq_number, None, addr[0], addr[1], server_ip, server_port,
-                              message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"],
-                              delay_time)
+                    log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], server_ip,
+                              server_port, message_content, latency)
                     continue
 
                 if random.random() < proxy_config["client-delay"]:
                     delay_time = random.randint(*proxy_config["client-delay-time"]) / 1000  # Convert ms to seconds
-                    print(f"⏳ [Client -> Server] Delayed packet [SEQ {seq_number}] from {addr} "
-                          f"for {delay_time * 1000:.2f} ms")
+                    print(
+                        f"⏳ [Client -> Server] Delayed packet [SEQ {seq_number}] from {addr} for {delay_time * 1000:.2f} ms")
                     time.sleep(delay_time)
 
                 destination = (server_ip, server_port)
                 print(f"✅ [Client -> Server] Forwarded packet [SEQ {seq_number}] to {destination}")
-                log_event("CTS", "Forwarded", seq_number, None, addr[0], addr[1], server_ip, server_port,
-                          message_content, latency, proxy_config["client-drop"], proxy_config["client-delay"],
-                          delay_time * 1000)
+                log_event(proxy_logger, 'Forwarded', seq_number, None, addr[0], addr[1], server_ip, server_port,
+                          message_content, latency)
             else:
                 # Packet from the server
                 if not client_address:
                     print("⚠️ No client address to forward to. Dropping packet.")
-                    log_event("STC", "Dropped", seq_number, None, addr[0], addr[1], server_ip, server_port,
-                              message_content, latency, proxy_config["server-drop"], proxy_config["server-delay"],
-                              delay_time)
+                    log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], server_ip,
+                              server_port, message_content, latency)
                     continue
 
                 # Deduplication for server-to-client
                 if is_ack and seq_number in dedup_cache["server_to_client"]:
                     print(f"🔄 [Server -> Client] Duplicate acknowledgment [ACK {seq_number}] from {addr}. Ignored.")
-                    log_event("STC", "Duplicate", seq_number, seq_number, addr[0], addr[1], client_address[0],
-                              client_address[1], None, latency, proxy_config["server-drop"],
-                              proxy_config["server-delay"], delay_time)
+                    log_event(proxy_logger, 'Duplicate', seq_number, seq_number, addr[0], addr[1],
+                              client_address[0], client_address[1], None, latency)
                     continue
 
                 if is_ack:
@@ -188,22 +161,20 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
                 if random.random() < proxy_config["server-drop"]:
                     print(f"❌ [Server -> Client] Dropped packet [SEQ {seq_number}] from {addr}")
-                    log_event("STC", "Dropped", seq_number, None, addr[0], addr[1], client_address[0],
-                              client_address[1], None, latency, proxy_config["server-drop"],
-                              proxy_config["server-delay"], delay_time)
+                    log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], client_address[0],
+                              client_address[1], None, latency)
                     continue
 
                 if random.random() < proxy_config["server-delay"]:
                     delay_time = random.randint(*proxy_config["server-delay-time"]) / 1000  # Convert ms to seconds
-                    print(f"⏳ [Server -> Client] Delayed packet [SEQ {seq_number}] from {addr} "
-                          f"for {delay_time * 1000:.2f} ms")
+                    print(
+                        f"⏳ [Server -> Client] Delayed packet [SEQ {seq_number}] from {addr} for {delay_time * 1000:.2f} ms")
                     time.sleep(delay_time)
 
                 destination = client_address
                 print(f"✅ [Server -> Client] Forwarded packet [SEQ {seq_number}] to {destination}")
-                log_event("STC", "Forwarded", seq_number, seq_number, addr[0], addr[1], client_address[0],
-                          client_address[1], None, latency, proxy_config["server-drop"], proxy_config["server-delay"],
-                          delay_time * 1000)
+                log_event(proxy_logger, 'Forwarded', seq_number, seq_number, addr[0], addr[1], client_address[0],
+                          client_address[1], None, latency)
 
             # Forward the packet
             proxy_socket.sendto(data, destination)
@@ -234,8 +205,7 @@ def main():
     print(f"🔧 Control interface listening on {args.listen_ip}:{args.control_port}")
 
     threading.Thread(target=udp_proxy, args=(proxy_socket, args.target_ip, args.target_port), daemon=True).start()
-    threading.Thread(target=handle_control, args=(control_socket, proxy_config),
-                     daemon=True).start()  # Use the imported function
+    threading.Thread(target=handle_control, args=(control_socket, proxy_config), daemon=True).start()
 
     try:
         while True:
