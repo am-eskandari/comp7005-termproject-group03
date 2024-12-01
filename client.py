@@ -51,6 +51,9 @@ def udp_client(server_ip, server_port, timeout=2):
 
     print(f"🚀 Client started. Sending messages to {server_ip}:{server_port}\n")
 
+    source_ip = None
+    source_port = None
+
     try:
         while True:
             # Get the message input from the user
@@ -64,11 +67,10 @@ def udp_client(server_ip, server_port, timeout=2):
 
             # Prepare the message with the sequence number
             message_with_seq = f"{sequence_number}:{message}"
-            send_time = None  # To track when the message is sent
 
             for attempt in range(10):  # Retry up to 10 times
                 try:
-                    # Send the message to the server
+                    # Send the message to the server and record the time
                     send_time = datetime.now()
                     client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
 
@@ -79,7 +81,7 @@ def udp_client(server_ip, server_port, timeout=2):
                           f"(From {source_ip}:{source_port} to {server_ip}:{server_port})")
 
                     # Log the sent event
-                    log_event(log_file_path, "Sent", sequence_number, None,
+                    log_event("Sent", sequence_number, None,
                               source_ip, source_port, server_ip, server_port, message, None)
 
                     # Wait for an acknowledgment
@@ -98,25 +100,28 @@ def udp_client(server_ip, server_port, timeout=2):
                     if ack == sequence_number:
                         latency_ms = (receive_time - send_time).total_seconds() * 1000
                         print(f"📥 [ACK {ack}] Received from {addr} (Latency: {latency_ms:.2f} ms)\n")
-                        log_event(log_file_path, "Acknowledged", sequence_number, ack,
+                        log_event("Acknowledged", sequence_number, ack,
                                   addr[0], addr[1], server_ip, server_port, None, f"{latency_ms:.2f}")
                         sequence_number += 1  # Increment the sequence number for the next message
                         break  # Exit the retry loop on successful acknowledgment
                     else:
                         print(f"⚠️ Unexpected ACK: {ack} (Expected: {sequence_number})")
-                        log_event(log_file_path, "Unexpected ACK", sequence_number, ack,
+                        log_event("Unexpected ACK", sequence_number, ack,
                                   addr[0], addr[1], server_ip, server_port, None, None)
 
                 except socket.timeout:
                     # Log the retransmit event
-                    log_event(log_file_path, "Retransmit", sequence_number, None,
-                              source_ip, source_port, server_ip, server_port, message, None)
+                    if source_ip is not None and source_port is not None:
+                        log_event("Retransmit", sequence_number, None,
+                                  source_ip, source_port, server_ip, server_port, message, None)
                     print(f"⏳ Timeout! Retrying... (Attempt {attempt + 1})")
             else:
                 # If all attempts fail, notify the user and log the failure
-                log_event(log_file_path, "Failed", sequence_number, None,
-                          source_ip, source_port, server_ip, server_port, message, None)
+                if source_ip is not None and source_port is not None:
+                    log_event("Failed", sequence_number, None,
+                              source_ip, source_port, server_ip, server_port, message, None)
                 print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 10 attempts.\n")
+
 
     except KeyboardInterrupt:
         print("\n👋 Exiting client. Sending termination message to server...")
@@ -131,5 +136,5 @@ def udp_client(server_ip, server_port, timeout=2):
 
 
 if __name__ == "__main__":
-    args = parse_arguments()
-    udp_client(args.target_ip, args.target_port, args.timeout)
+    parsed_args = parse_arguments()
+    udp_client(parsed_args.target_ip, parsed_args.target_port, parsed_args.timeout)
