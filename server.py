@@ -43,8 +43,20 @@ def udp_server(listen_ip, listen_port):
                 if not data:
                     print(f"⚠️ Received an empty message from {addr}")
                 else:
-                    # Decode the data and extract the sequence number and message
+                    # Decode the data
                     decoded_data = data.decode()
+
+                    # Check if the message is a termination signal
+                    if decoded_data == "TERMINATE":
+                        print(f"👋 Client {addr} has terminated the session. Resetting sequence.")
+                        expected_sequence_number = 1  # Reset sequence number for new clients
+                        csv_writer.writerow([receive_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                                             "Terminate", None, None,
+                                             addr[0], addr[1], listen_ip, listen_port,
+                                             None, f"{latency_ms:.2f}"])
+                        continue
+
+                    # Extract the sequence number and message
                     sequence_number, message = decoded_data.split(":", 1)
                     sequence_number = int(sequence_number)
 
