@@ -1,15 +1,64 @@
 import argparse
 import csv
+import re
 import socket
 from datetime import datetime
+
+
+def validate_ip(ip):
+    """Validate IPv4 address format with graceful error handling."""
+    try:
+        pattern = re.compile(r"^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$")
+        if not pattern.match(ip):
+            raise ValueError
+        parts = ip.split(".")
+        if any(int(part) < 0 or int(part) > 255 for part in parts):
+            raise ValueError
+    except ValueError:
+        print(f"❌ Invalid IP address format: {ip}")
+        print("IP address must be in the format 'X.X.X.X' with each octet between 0 and 255.")
+        exit(1)
+    return ip
+
+
+def validate_port(port):
+    """Validate port number with graceful error handling."""
+    try:
+        port = int(port)
+        if not (1 <= port <= 65535):
+            raise ValueError
+    except ValueError:
+        print(f"❌ Invalid port number: {port}. Must be an integer between 1 and 65535.")
+        exit(1)
+    return port
 
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="UDP Client with Latency Tracking")
     parser.add_argument('--target-ip', required=True, help="Server IP address")
-    parser.add_argument('--target-port', type=int, required=True, help="Server port")
-    parser.add_argument('--timeout', type=int, default=2, help="Acknowledgment timeout in seconds")
-    return parser.parse_args()
+    parser.add_argument('--target-port', required=True, help="Server port")
+    parser.add_argument('--timeout', required=True, help="Acknowledgment timeout in milliseconds")
+    args = parser.parse_args()
+
+    # Validate and process IP
+    args.target_ip = validate_ip(args.target_ip)
+
+    # Validate and process port
+    args.target_port = validate_port(args.target_port)
+
+    # Validate and process timeout
+    try:
+        timeout_ms = int(args.timeout)
+        if timeout_ms <= 0:
+            raise ValueError("Timeout must be a positive integer.")
+    except ValueError as e:
+        print(f"❌ Invalid timeout value: {args.timeout}. {e}")
+        print("Timeout must be a positive integer in milliseconds.")
+        exit(1)
+
+    # Convert timeout to seconds for socket operations
+    args.timeout = timeout_ms / 1000.0
+    return args
 
 
 def udp_client(server_ip, server_port, timeout=2):
