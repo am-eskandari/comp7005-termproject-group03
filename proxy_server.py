@@ -1,12 +1,12 @@
 import argparse
 import csv
-import json
 import random
 import socket
 import threading
 import time
 from datetime import datetime
 
+from utils.utils import handle_control
 from utils.validation import validate_ip, validate_port, validate_chance, validate_delay_time
 
 # Shared proxy configuration
@@ -212,64 +212,6 @@ def udp_proxy(proxy_socket, server_ip, server_port):
             print(f"❌ Proxy server error: {e}")
 
 
-def handle_control(control_socket):
-    """
-    Control interface for dynamic parameter updates.
-    """
-    print(f"🔧 Control interface active. Use the control port to dynamically update parameters.\n")
-    while True:
-        try:
-            data, addr = control_socket.recvfrom(1024)
-            command = data.decode().strip()
-            print(f"📝 Received control command: {command}")
-
-            if command.startswith("SET"):
-                # Parse multiple parameter=value pairs
-                updates = command[4:].strip()  # Remove "SET " prefix
-                changes = updates.split()  # Split by spaces to get individual param=value pairs
-                responses = []
-
-                for change in changes:
-                    if "=" not in change:
-                        responses.append(f"❌ Invalid format: {change}")
-                        continue
-
-                    param, value = change.split("=", 1)
-                    if param in ["client-delay-time", "server-delay-time"]:
-                        try:
-                            proxy_config[param] = validate_delay_time(value)  # Validate and parse delay time
-                            responses.append(f"✅ Updated {param} to {value}")
-                        except ValueError as e:
-                            responses.append(f"❌ {e}")
-                    elif param in proxy_config:
-                        try:
-                            proxy_config[param] = validate_chance(value)  # Validate chance values
-                            responses.append(f"✅ Updated {param} to {value}")
-                        except ValueError as e:
-                            responses.append(f"❌ {e}")
-                    else:
-                        responses.append(f"❌ Invalid parameter: {param}")
-
-                # Send responses back to client
-                response = "\n".join(responses)
-                print(f"🔨 {response}")
-                control_socket.sendto(response.encode(), addr)
-
-            elif command.startswith("GET"):
-                # Return the current configuration
-                response = json.dumps(proxy_config, indent=2)
-                print(f"📤 Sent current configuration: {response}")
-                control_socket.sendto(response.encode(), addr)
-
-            else:
-                response = "❌ Unknown command"
-                print(f"⚠️ {response}")
-                control_socket.sendto(response.encode(), addr)
-
-        except Exception as e:
-            print(f"❌ Error in control interface: {e}")
-
-
 def main():
     args = parse_arguments()
 
@@ -292,7 +234,8 @@ def main():
     print(f"🔧 Control interface listening on {args.listen_ip}:{args.control_port}")
 
     threading.Thread(target=udp_proxy, args=(proxy_socket, args.target_ip, args.target_port), daemon=True).start()
-    threading.Thread(target=handle_control, args=(control_socket,), daemon=True).start()
+    threading.Thread(target=handle_control, args=(control_socket, proxy_config),
+                     daemon=True).start()  # Use the imported function
 
     try:
         while True:
