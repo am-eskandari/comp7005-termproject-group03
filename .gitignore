@@ -163,6 +163,10 @@ cython_debug/
 
 
 #Log files
-data/log_client.csv
-data/log_server.csv
-data/log_proxy.csv
+#data/log_client.csv
+#data/log_server.csv
+#data/log_proxy.csv
+
+log_client.csv
+log_server.csv
+log_proxy.csv
