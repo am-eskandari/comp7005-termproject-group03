@@ -3,12 +3,22 @@ import csv
 import socket
 from datetime import datetime
 
+from utils import validate_ip, validate_port  # Import validation functions
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="UDP Server with Latency Tracking")
     parser.add_argument('--listen-ip', required=True, help="IP address to bind")
-    parser.add_argument('--listen-port', type=int, required=True, help="Port to listen on")
-    return parser.parse_args()
+    parser.add_argument('--listen-port', required=True, help="Port to listen on")
+    args = parser.parse_args()
+
+    # Validate and process IP
+    args.listen_ip = validate_ip(args.listen_ip)
+
+    # Validate and process port
+    args.listen_port = validate_port(args.listen_port)
+
+    return args
 
 
 def udp_server(listen_ip, listen_port):
