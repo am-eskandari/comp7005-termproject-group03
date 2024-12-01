@@ -2,7 +2,7 @@ import argparse
 import socket
 from datetime import datetime
 
-from utils.logger import log_event, initialize_log
+from utils.logger import log_event
 from utils.validation import validate_ip, validate_port
 
 
@@ -41,13 +41,6 @@ def udp_client(server_ip, server_port, timeout=2):
     client_socket.settimeout(timeout)
 
     sequence_number = 1  # Tracks the sequence number for each message
-
-    # Initialize logging
-    log_file_path = "log_client.csv"
-    initialize_log(log_file_path, [
-        "Timestamp", "Event", "Sequence", "Acknowledgment", "Source IP", "Source Port",
-        "Destination IP", "Destination Port", "Message", "Latency (ms)"
-    ])
 
     print(f"🚀 Client started. Sending messages to {server_ip}:{server_port}\n")
 
