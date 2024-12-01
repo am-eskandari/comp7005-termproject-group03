@@ -30,8 +30,8 @@ def udp_client(server_ip, server_port, timeout=2):
 
         print(f"🚀 Client started. Sending messages to {server_ip}:{server_port}\n")
 
-        while True:
-            try:
+        try:
+            while True:
                 # Get the message input from the user
                 message = input("📤 Enter message to send (or type 'exit' to quit): ")
                 if message.lower() == "exit":
@@ -102,11 +102,16 @@ def udp_client(server_ip, server_port, timeout=2):
                                          source_ip, source_port, server_ip, server_port, message, None])
                     print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 10 attempts.\n")
 
-            except KeyboardInterrupt:
-                print("\n👋 Exiting client. Goodbye!")
-                break
+        except KeyboardInterrupt:
+            print("\n👋 Exiting client. Sending termination message to server...")
+            terminate_message = "TERMINATE"
+            try:
+                client_socket.sendto(terminate_message.encode(), (server_ip, server_port))
+                print("🚨 Termination message sent successfully.")
             except Exception as e:
-                print(f"❌ Error: {e}")
+                print(f"❌ Failed to send termination message: {e}")
+            finally:
+                print("👋 Goodbye!")
 
 
 if __name__ == "__main__":
