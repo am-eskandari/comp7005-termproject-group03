@@ -8,6 +8,8 @@ import threading
 import time
 from datetime import datetime
 
+from utils import validate_ip, validate_port, validate_chance, validate_delay_time  # Import helpers
+
 # Shared proxy configuration
 proxy_config = {
     "client-drop": 0.0,
@@ -68,21 +70,38 @@ def clear_expired_cache():
 def parse_arguments():
     parser = argparse.ArgumentParser(description="UDP Proxy Server with Logging and Delay Ranges")
     parser.add_argument('--listen-ip', required=True, help="Proxy server IP address")
-    parser.add_argument('--listen-port', type=int, required=True, help="Proxy server port")
+    parser.add_argument('--listen-port', required=True, help="Proxy server port")
     parser.add_argument('--target-ip', required=True, help="Target server IP address")
-    parser.add_argument('--target-port', type=int, required=True, help="Target server port")
-    parser.add_argument('--client-drop', type=float, default=0.0, help="Drop chance (0.0 to 1.0) for client-to-server")
-    parser.add_argument('--server-drop', type=float, default=0.0, help="Drop chance (0.0 to 1.0) for server-to-client")
-    parser.add_argument('--client-delay', type=float, default=0.0,
-                        help="Delay chance (0.0 to 1.0) for client-to-server")
-    parser.add_argument('--server-delay', type=float, default=0.0,
-                        help="Delay chance (0.0 to 1.0) for server-to-client")
-    parser.add_argument('--client-delay-time', type=str, default="0",
-                        help="Delay time for client-to-server in milliseconds (fixed or range, e.g., 100-500)")
-    parser.add_argument('--server-delay-time', type=str, default="0",
-                        help="Delay time for server-to-client in milliseconds (fixed or range, e.g., 100-500)")
-    parser.add_argument('--control-port', type=int, default=4500, help="Port for dynamic configuration control")
-    return parser.parse_args()
+    parser.add_argument('--target-port', required=True, help="Target server port")
+    parser.add_argument('--client-drop', required=True, help="Drop chance (0.0 to 1.0) for client-to-server")
+    parser.add_argument('--server-drop', required=True, help="Drop chance (0.0 to 1.0) for server-to-client")
+    parser.add_argument('--client-delay', required=True, help="Delay chance (0.0 to 1.0) for client-to-server")
+    parser.add_argument('--server-delay', required=True, help="Delay chance (0.0 to 1.0) for server-to-client")
+    parser.add_argument('--client-delay-time', required=True,
+                        help="Delay time for client-to-server (e.g., '100' or '100-500')")
+    parser.add_argument('--server-delay-time', required=True,
+                        help="Delay time for server-to-client (e.g., '100' or '100-500')")
+    parser.add_argument('--control-port', required=True, help="Control port for dynamic configuration updates")
+    args = parser.parse_args()
+
+    # Validate IPs and ports
+    args.listen_ip = validate_ip(args.listen_ip)
+    args.listen_port = validate_port(args.listen_port)
+    args.target_ip = validate_ip(args.target_ip)
+    args.target_port = validate_port(args.target_port)
+    args.control_port = validate_port(args.control_port)
+
+    # Validate drop and delay chances
+    args.client_drop = validate_chance(args.client_drop)
+    args.server_drop = validate_chance(args.server_drop)
+    args.client_delay = validate_chance(args.client_delay)
+    args.server_delay = validate_chance(args.server_delay)
+
+    # Validate delay times
+    args.client_delay_time = validate_delay_time(args.client_delay_time)
+    args.server_delay_time = validate_delay_time(args.server_delay_time)
+
+    return args
 
 
 def udp_proxy(proxy_socket, server_ip, server_port):
@@ -259,13 +278,13 @@ def handle_control(control_socket):
 def main():
     args = parse_arguments()
 
-    # Initialize proxy configuration from CLI arguments
+    # Proxy configuration initialization
     proxy_config["client-drop"] = args.client_drop
     proxy_config["server-drop"] = args.server_drop
     proxy_config["client-delay"] = args.client_delay
     proxy_config["server-delay"] = args.server_delay
-    proxy_config["client-delay-time"] = parse_delay(args.client_delay_time)
-    proxy_config["server-delay-time"] = parse_delay(args.server_delay_time)
+    proxy_config["client-delay-time"] = args.client_delay_time
+    proxy_config["server-delay-time"] = args.server_delay_time
 
     # Set up proxy socket
     proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -277,10 +296,8 @@ def main():
     control_socket.bind((args.listen_ip, args.control_port))
     print(f"🛠️ Control interface listening on {args.listen_ip}:{args.control_port}")
 
-    # Start proxy and control threads
     threading.Thread(target=udp_proxy, args=(proxy_socket, args.target_ip, args.target_port), daemon=True).start()
     threading.Thread(target=handle_control, args=(control_socket,), daemon=True).start()
-    threading.Thread(target=clear_expired_cache, daemon=True).start()
 
     try:
         while True:
