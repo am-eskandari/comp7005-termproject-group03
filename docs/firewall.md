@@ -170,8 +170,3 @@ python3 client.py --target-ip 192.168.0.19 --target-port 4000 --timeout 1
 - Ensure each script is tested independently before integrating all components for the test.
 
 ---
-
-
-
-no negative or char and input between 1.0 and 0.0 inclusive for all server and client drop and delay; and for the server
-and client delay time no negative time make sure they only take float or int no char or other types
