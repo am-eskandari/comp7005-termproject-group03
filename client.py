@@ -3,7 +3,7 @@ import csv
 import socket
 from datetime import datetime
 
-from utils import validate_ip, validate_port
+from utils.validation import validate_ip, validate_port
 
 
 def parse_arguments():

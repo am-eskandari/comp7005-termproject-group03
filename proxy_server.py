@@ -8,7 +8,7 @@ import threading
 import time
 from datetime import datetime
 
-from utils import validate_ip, validate_port, validate_chance, validate_delay_time  # Import helpers
+from utils.validation import validate_ip, validate_port, validate_chance, validate_delay_time  # Import helpers
 
 # Shared proxy configuration
 proxy_config = {
