@@ -102,6 +102,16 @@ def udp_proxy(proxy_socket, server_ip, server_port):
             data, addr = proxy_socket.recvfrom(65507)
             message = data.decode()
 
+            # Handle "TERMINATE" messages
+            if message == "TERMINATE":
+                # Forward termination messages immediately to the server
+                print(f"🚨 [Client -> Server] Termination message received from {addr}. Forwarding immediately.")
+                destination = (server_ip, server_port)
+                proxy_socket.sendto(data, destination)
+                log_event("CTS", "Terminate", None, None, addr[0], addr[1], server_ip, server_port,
+                          message, None, 0.0, 0.0, 0.0)  # Log as bypassed with no delay or drop
+                continue
+
             # Check if the message is an acknowledgment
             if message.startswith("ACK:"):
                 seq_number = message.split(":")[1]
