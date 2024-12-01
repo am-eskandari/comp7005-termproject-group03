@@ -216,20 +216,34 @@ def handle_control(control_socket):
             print(f"📝 Received control command: {command}")
 
             if command.startswith("SET"):
-                _, param, value = command.split()
-                if param in ["client-delay-time", "server-delay-time"]:
-                    proxy_config[param] = parse_delay(value)  # Parse range or fixed
-                elif param in proxy_config:
-                    proxy_config[param] = float(value)
-                else:
-                    raise ValueError(f"❌ Invalid parameter: {param}")
+                # Parse multiple parameter=value pairs
+                updates = command[4:].strip()  # Remove "SET " prefix
+                changes = updates.split()  # Split by spaces to get individual param=value pairs
+                responses = []
 
-                response = f"✅ Updated {param} to {value}"
+                for change in changes:
+                    if "=" not in change:
+                        responses.append(f"❌ Invalid format: {change}")
+                        continue
+
+                    param, value = change.split("=", 1)
+                    if param in ["client-delay-time", "server-delay-time"]:
+                        proxy_config[param] = parse_delay(value)  # Parse range or fixed
+                        responses.append(f"✅ Updated {param} to {value}")
+                    elif param in proxy_config:
+                        proxy_config[param] = float(value)
+                        responses.append(f"✅ Updated {param} to {value}")
+                    else:
+                        responses.append(f"❌ Invalid parameter: {param}")
+
+                # Send responses back to client
+                response = "\n".join(responses)
                 print(f"🔧 {response}")
                 control_socket.sendto(response.encode(), addr)
 
             elif command.startswith("GET"):
-                response = json.dumps(proxy_config)
+                # Return the current configuration
+                response = json.dumps(proxy_config, indent=2)
                 print(f"📤 Sent current configuration: {response}")
                 control_socket.sendto(response.encode(), addr)
 
