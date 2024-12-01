@@ -1,7 +1,6 @@
-import socket
-import time
 import argparse
 import csv
+import socket
 from datetime import datetime
 
 
@@ -22,7 +21,7 @@ def udp_client(server_ip, server_port, timeout=2):
     sequence_number = 1  # Tracks the sequence number for each message
 
     # Open a CSV file for logging
-    with open("data/log_client.csv", "w", newline="") as csv_file:
+    with open("log_client.csv", "w", newline="") as csv_file:
         csv_writer = csv.writer(csv_file)
         # Write CSV header
         csv_writer.writerow(["Timestamp", "Event", "Sequence", "Acknowledgment",
