@@ -36,6 +36,8 @@ def validate_port(port):
 def validate_chance(chance):
     """Validate drop or delay chance values."""
     try:
+        if not isinstance(chance, str) or chance.isdigit():
+            raise ValueError(f"Chance value should be a decimal number. Got: {chance}")
         chance = float(chance)
         if not (0.0 <= chance <= 1.0):
             raise ValueError
@@ -48,16 +50,19 @@ def validate_chance(chance):
 def validate_delay_time(delay_time):
     """Validate delay time in milliseconds or range."""
     try:
+        if not isinstance(delay_time, str) or delay_time.isdigit():
+            raise ValueError(f"Delay time should be a positive integer or range. Got: {delay_time}")
         if "-" in delay_time:
             min_val, max_val = map(int, delay_time.split("-"))
             if min_val < 0 or max_val < 0 or min_val > max_val:
-                raise ValueError
-            return (min_val, max_val)
+                raise ValueError(
+                    f"Invalid delay range: {delay_time}. Minimum value must be less than or equal to maximum value, and both must be non-negative.")
+            return min_val, max_val
         else:
             delay = int(delay_time)
             if delay < 0:
-                raise ValueError
-            return (delay, delay)
-    except ValueError:
-        print(f"❌ Invalid delay time: {delay_time}. Must be a positive integer or range (e.g., '100-500').")
+                raise ValueError(f"Delay time must be non-negative. Got: {delay}")
+            return delay, delay
+    except ValueError as e:
+        print(f"❌ {e}")
         exit(1)

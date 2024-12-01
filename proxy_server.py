@@ -2,7 +2,6 @@ import argparse
 import csv
 import json
 import random
-import re
 import socket
 import threading
 import time
@@ -38,14 +37,6 @@ with open(LOG_FILE, "w", newline="") as csv_file:
         "Source IP", "Source Port", "Destination IP", "Destination Port",
         "Message", "Latency (ms)", "Drop Chance", "Delay Chance", "Delay Time (ms)"
     ])
-
-
-def parse_delay(value):
-    """Parse fixed or range delay values."""
-    match = re.match(r'(\d+)-(\d+)', value)
-    if match:
-        return int(match.group(1)), int(match.group(2))  # Return range as tuple
-    return int(value), int(value)  # Return fixed value as a range with the same start and end
 
 
 def log_event(direction, event, seq_number, ack_number, src_ip, src_port, dest_ip, dest_port, message, latency,
@@ -84,20 +75,18 @@ def parse_arguments():
     parser.add_argument('--control-port', required=True, help="Control port for dynamic configuration updates")
     args = parser.parse_args()
 
-    # Validate IPs and ports
+    # Validate arguments using validation functions
     args.listen_ip = validate_ip(args.listen_ip)
     args.listen_port = validate_port(args.listen_port)
     args.target_ip = validate_ip(args.target_ip)
     args.target_port = validate_port(args.target_port)
     args.control_port = validate_port(args.control_port)
 
-    # Validate drop and delay chances
     args.client_drop = validate_chance(args.client_drop)
     args.server_drop = validate_chance(args.server_drop)
     args.client_delay = validate_chance(args.client_delay)
     args.server_delay = validate_chance(args.server_delay)
 
-    # Validate delay times
     args.client_delay_time = validate_delay_time(args.client_delay_time)
     args.server_delay_time = validate_delay_time(args.server_delay_time)
 
@@ -227,7 +216,7 @@ def handle_control(control_socket):
     """
     Control interface for dynamic parameter updates.
     """
-    print(f"🛠️ Control interface active. Use the control port to dynamically update parameters.\n")
+    print(f"🔧 Control interface active. Use the control port to dynamically update parameters.\n")
     while True:
         try:
             data, addr = control_socket.recvfrom(1024)
@@ -247,17 +236,23 @@ def handle_control(control_socket):
 
                     param, value = change.split("=", 1)
                     if param in ["client-delay-time", "server-delay-time"]:
-                        proxy_config[param] = parse_delay(value)  # Parse range or fixed
-                        responses.append(f"✅ Updated {param} to {value}")
+                        try:
+                            proxy_config[param] = validate_delay_time(value)  # Validate and parse delay time
+                            responses.append(f"✅ Updated {param} to {value}")
+                        except ValueError as e:
+                            responses.append(f"❌ {e}")
                     elif param in proxy_config:
-                        proxy_config[param] = float(value)
-                        responses.append(f"✅ Updated {param} to {value}")
+                        try:
+                            proxy_config[param] = validate_chance(value)  # Validate chance values
+                            responses.append(f"✅ Updated {param} to {value}")
+                        except ValueError as e:
+                            responses.append(f"❌ {e}")
                     else:
                         responses.append(f"❌ Invalid parameter: {param}")
 
                 # Send responses back to client
                 response = "\n".join(responses)
-                print(f"🔧 {response}")
+                print(f"🔨 {response}")
                 control_socket.sendto(response.encode(), addr)
 
             elif command.startswith("GET"):
@@ -294,7 +289,7 @@ def main():
     # Set up control socket
     control_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     control_socket.bind((args.listen_ip, args.control_port))
-    print(f"🛠️ Control interface listening on {args.listen_ip}:{args.control_port}")
+    print(f"🔧 Control interface listening on {args.listen_ip}:{args.control_port}")
 
     threading.Thread(target=udp_proxy, args=(proxy_socket, args.target_ip, args.target_port), daemon=True).start()
     threading.Thread(target=handle_control, args=(control_socket,), daemon=True).start()
