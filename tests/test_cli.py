@@ -10,23 +10,25 @@ from server import parse_arguments as parse_server_arguments
 
 # Common helper function for argument validation
 def _test_arguments(parser_function, args, expected_output):
+    print(f"\nRunning test with arguments: {args}")
     try:
-        # Create a Namespace object with the provided args
         mock_args = Namespace(**args)
         with patch("argparse.ArgumentParser.parse_args", return_value=mock_args):
             if expected_output:
                 try:
                     parser_function()
+                    print("✅ Test passed: Expected success, and the parser handled the arguments correctly.")
                 except SystemExit as e:
-                    pytest.fail(f"Valid args caused a system exit: {e}")
+                    pytest.fail(f"❌ Valid args caused a system exit: {e}")
             else:
                 with pytest.raises(SystemExit):
                     parser_function()
+                    print("✅ Test passed: Expected failure, and the parser raised SystemExit as expected.")
     except AttributeError as e:
         if not expected_output:
-            # If an expected failure is due to a missing argument, the test should pass
+            print("✅ Test passed: Expected failure, and the parser raised AttributeError as expected.")
             return
-        raise AssertionError(f"Unexpected AttributeError: {e}")
+        raise AssertionError(f"❌ Unexpected AttributeError: {e}")
 
 
 # Proxy Tests
