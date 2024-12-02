@@ -170,3 +170,5 @@ python3 client.py --target-ip 192.168.0.19 --target-port 4000 --timeout 1
 - Ensure each script is tested independently before integrating all components for the test.
 
 ---
+
+ls -R > repo_structure.txt
