@@ -109,11 +109,16 @@ def udp_client(server_ip, server_port, timeout=2):
                                   source_ip, source_port, server_ip, server_port, message, None)
                     print(f"⏳ Timeout! Retrying... (Attempt {attempt + 1})")
             else:
-                # If all attempts fail, notify the user and log the failure
+                # If all attempts fail, request a resend of the acknowledgment
                 if source_ip is not None and source_port is not None:
                     log_event(client_logger, "Failed", sequence_number, None,
                               source_ip, source_port, server_ip, server_port, message, None)
                 print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 5 attempts.\n")
+
+                # Send a RESEND_ACK request to the server
+                resend_request = f"RESEND_ACK:{sequence_number}"
+                client_socket.sendto(resend_request.encode(), (server_ip, server_port))
+                print(f"🔄 Requested server to resend ACK for SEQ {sequence_number}.")
 
     except KeyboardInterrupt:
         print("\n👋 Exiting client. Sending termination message to server...")

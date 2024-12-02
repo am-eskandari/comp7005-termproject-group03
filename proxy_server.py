@@ -71,6 +71,9 @@ def parse_arguments():
     return args
 
 
+ack_tracking_cache = {}  # Tracks ACK packets for potential retries
+
+
 def udp_proxy(proxy_socket, server_ip, server_port):
     """
     A proxy server that forwards UDP packets with simulated unreliability.
@@ -81,8 +84,6 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
     while True:
         try:
-            delay_time = 0  # Initialize delay_time to avoid unassigned variable error
-
             # Receive data from client or server
             start_time = datetime.now()
             data, addr = proxy_socket.recvfrom(65507)
@@ -90,7 +91,6 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
             # Handle "TERMINATE" messages
             if message == "TERMINATE":
-                # Forward termination messages immediately to the server
                 print(f"🚨 [Client -> Server] Termination message received from {addr}. Forwarding immediately.")
                 destination = (server_ip, server_port)
                 proxy_socket.sendto(data, destination)
@@ -110,77 +110,67 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
             latency = (datetime.now() - start_time).total_seconds() * 1000
 
-            # Identify if it's a client or server packet
+            # Handle client-to-server packets
             if addr != (server_ip, server_port):
-                # Packet from the client
                 client_address = addr  # Save the client address
 
-                # Deduplication for client-to-server
-                if not is_ack and seq_number in dedup_cache["client_to_server"]:
-                    print(f"🔄 [Client -> Server] Duplicate packet [SEQ {seq_number}] from {addr}. Ignored.")
-                    log_event(proxy_logger, 'Duplicate', seq_number, None, addr[0], addr[1], server_ip,
-                              server_port, message_content, latency)
-                    continue
-
-                if not is_ack:
-                    dedup_cache["client_to_server"].add(seq_number)
-
-                if random.random() < proxy_config["client-drop"]:
-                    print(f"❌ [Client -> Server] Dropped packet [SEQ {seq_number}] from {addr}")
-                    log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], server_ip,
-                              server_port, message_content, latency)
-                    continue
-
-                if random.random() < proxy_config["client-delay"]:
-                    delay_time = random.randint(*proxy_config["client-delay-time"]) / 1000  # Convert ms to seconds
-                    print(
-                        f"⏳ [Client -> Server] Delayed packet [SEQ {seq_number}] from {addr} for {delay_time * 1000:.2f} ms")
-                    time.sleep(delay_time)
+                # Handle drops and delays for client-to-server
+                if not handle_drops_and_delays(seq_number, addr, message_content, is_ack, "client-to-server",
+                                               proxy_socket, server_ip, server_port):
+                    continue  # Packet was dropped, no need to forward
 
                 destination = (server_ip, server_port)
-                print(f"✅ [Client -> Server] Forwarded packet [SEQ {seq_number}] to {destination}")
-                log_event(proxy_logger, 'Forwarded', seq_number, None, addr[0], addr[1], server_ip, server_port,
-                          message_content, latency)
+
+            # Handle server-to-client packets
             else:
-                # Packet from the server
                 if not client_address:
                     print("⚠️ No client address to forward to. Dropping packet.")
                     log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], server_ip,
                               server_port, message_content, latency)
                     continue
 
-                # Deduplication for server-to-client
-                if is_ack and seq_number in dedup_cache["server_to_client"]:
-                    print(f"🔄 [Server -> Client] Duplicate acknowledgment [ACK {seq_number}] from {addr}. Ignored.")
-                    log_event(proxy_logger, 'Duplicate', seq_number, seq_number, addr[0], addr[1],
-                              client_address[0], client_address[1], None, latency)
-                    continue
-
+                # Track acknowledgments for retries
                 if is_ack:
-                    dedup_cache["server_to_client"].add(seq_number)
+                    ack_tracking_cache[seq_number] = (data, client_address)
 
-                if random.random() < proxy_config["server-drop"]:
-                    print(f"❌ [Server -> Client] Dropped packet [SEQ {seq_number}] from {addr}")
-                    log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], client_address[0],
-                              client_address[1], None, latency)
-                    continue
-
-                if random.random() < proxy_config["server-delay"]:
-                    delay_time = random.randint(*proxy_config["server-delay-time"]) / 1000  # Convert ms to seconds
-                    print(
-                        f"⏳ [Server -> Client] Delayed packet [SEQ {seq_number}] from {addr} for {delay_time * 1000:.2f} ms")
-                    time.sleep(delay_time)
+                # Handle drops and delays for server-to-client
+                if not handle_drops_and_delays(seq_number, addr, None, is_ack, "server-to-client", proxy_socket,
+                                               client_address[0], client_address[1]):
+                    continue  # Packet was dropped, no need to forward
 
                 destination = client_address
-                print(f"✅ [Server -> Client] Forwarded packet [SEQ {seq_number}] to {destination}")
-                log_event(proxy_logger, 'Forwarded', seq_number, seq_number, addr[0], addr[1], client_address[0],
-                          client_address[1], None, latency)
 
             # Forward the packet
             proxy_socket.sendto(data, destination)
+            print(f"✅ [{addr} -> {destination}] Forwarded packet [SEQ {seq_number}]")
+            log_event(proxy_logger, 'Forwarded', seq_number, seq_number if is_ack else None, addr[0], addr[1],
+                      destination[0], destination[1], None, latency)
 
         except Exception as e:
             print(f"❌ Proxy server error: {e}")
+
+
+def handle_drops_and_delays(seq_number, addr, message_content, is_ack, direction, proxy_socket, target_ip, target_port):
+    """
+    Handles drops and delays for packets in both directions.
+    """
+    config_prefix = "client" if direction == "client-to-server" else "server"
+
+    # Simulate drop
+    if random.random() < proxy_config[f"{config_prefix}-drop"]:
+        print(f"❌ [{direction}] Dropped packet [SEQ {seq_number}] from {addr}")
+        log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], target_ip, target_port,
+                  message_content, None)
+        return False
+
+    # Simulate delay
+    if random.random() < proxy_config[f"{config_prefix}-delay"]:
+        delay_time = random.randint(*proxy_config[f"{config_prefix}-delay-time"]) / 1000  # Convert ms to seconds
+        print(
+            f"⏳ [{direction}] Delayed packet [SEQ {seq_number}] from {addr} for {delay_time * 1000:.2f} ms")
+        time.sleep(delay_time)
+
+    return True
 
 
 def main():
