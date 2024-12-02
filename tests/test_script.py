@@ -1,6 +1,6 @@
+import itertools
 import subprocess
 import time
-import itertools
 
 # Define the parameter ranges you want to test
 client_drop_values = [0.0, 0.1, 0.2, 0.3]
@@ -17,27 +17,33 @@ parameter_combinations = list(itertools.product(
     client_delay_time_values, server_delay_time_values
 ))
 
+
 # Function to start the server
 def start_server(ip, port):
     return subprocess.Popen(["python3", "server.py", f"--listen-ip={ip}", f"--listen-port={port}"])
 
+
 # Function to start the proxy server
 def start_proxy_server(listen_ip, listen_port, target_ip, target_port, control_port, **params):
     # Extract parameters and pass to the proxy server
-    cmd = ["python3", "proxy_server.py", f"--listen-ip={listen_ip}", f"--listen-port={listen_port}",
+    cmd = ["python3", "proxy.py", f"--listen-ip={listen_ip}", f"--listen-port={listen_port}",
            f"--target-ip={target_ip}", f"--target-port={target_port}", f"--control-port={control_port}"]
     for param, value in params.items():
         cmd.append(f"--{param}={value}")
     return subprocess.Popen(cmd)
 
+
 # Function to start the client
 def start_client(proxy_ip, proxy_port, timeout):
-    return subprocess.Popen(["python3", "client.py", f"--target-ip={proxy_ip}", f"--target-port={proxy_port}", f"--timeout={timeout}"])
+    return subprocess.Popen(
+        ["python3", "client.py", f"--target-ip={proxy_ip}", f"--target-port={proxy_port}", f"--timeout={timeout}"])
+
 
 # Function to update proxy server settings dynamically using nc
 def update_proxy_parameters(control_ip, control_port, param, value):
     command = f"echo 'SET {param} {value}' | nc -u {control_ip} {control_port}"
     subprocess.run(command, shell=True)
+
 
 # Function to run the full test cycle
 def run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, timeout, params):
@@ -61,12 +67,13 @@ def run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, tim
     proxy_process.wait()
     server_process.wait()
 
+
 # Main function to iterate through all combinations and run tests
 def main():
     # All components running on the same machine (use localhost)
     server_ip = "127.0.0.1"  # Server machine IP (localhost)
-    proxy_ip = "127.0.0.1"   # Proxy machine IP (localhost)
-    control_ip = "127.0.0.1" # Control machine IP (localhost)
+    proxy_ip = "127.0.0.1"  # Proxy machine IP (localhost)
+    control_ip = "127.0.0.1"  # Control machine IP (localhost)
     server_port = 5000
     proxy_port = 4000
     timeout = 1
@@ -84,6 +91,7 @@ def main():
         }
         print(f"Running test with parameters: {test_params}")
         run_test_cycle(server_ip, proxy_ip, control_ip, server_port, proxy_port, timeout, test_params)
+
 
 if __name__ == "__main__":
     main()

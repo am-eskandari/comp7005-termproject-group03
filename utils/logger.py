@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 
 def create_logger(logger_name, log_file_name):
     """
-    Create a logger for a specific component (client, server, proxy).
+    Create a logger for a specific component (client, server, proxy, control).
 
     Args:
         logger_name (str): Name of the logger.
@@ -33,7 +33,7 @@ def log_event(logger, event, sequence, acknowledgment, src_ip, src_port, dest_ip
     Log an event using the rotating logger.
 
     Args:
-        logger (logging.Logger): Logger instance (client, server, proxy).
+        logger (logging.Logger): Logger instance (client, server, proxy, control).
         event (str): The type of event to log.
         sequence (int or None): The sequence number of the packet, or None if not applicable.
         acknowledgment (int or None): The acknowledgment number, if applicable.
@@ -50,7 +50,22 @@ def log_event(logger, event, sequence, acknowledgment, src_ip, src_port, dest_ip
     logger.info(log_message)
 
 
+def log_control_event(logger, param, old_value, new_value):
+    """
+    Log a control configuration change.
+
+    Args:
+        logger (logging.Logger): Logger instance (control).
+        param (str): Parameter name being updated.
+        old_value: The previous value of the parameter.
+        new_value: The new value of the parameter.
+    """
+    log_message = f"Updated {param} from {old_value} to {new_value}"
+    logger.info(log_message)
+
+
 # Loggers for each module
 client_logger = create_logger('client_logger', 'packet_logs_client.log')
 server_logger = create_logger('server_logger', 'packet_logs_server.log')
 proxy_logger = create_logger('proxy_logger', 'packet_logs_proxy.log')
+control_logger = create_logger('control_logger', 'packet_logs_control.log')

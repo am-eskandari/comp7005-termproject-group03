@@ -109,7 +109,7 @@ python3 server.py --listen-ip 192.168.0.18 --listen-port 5000
 Run the proxy server on `192.168.0.19`:
 
 ```bash
-python3 proxy_server.py --listen-ip 192.168.0.19 --listen-port 4000 \
+python3 proxy.py --listen-ip 192.168.0.19 --listen-port 4000 \
 --target-ip 192.168.0.18 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 0 --server-delay 0 \
@@ -140,7 +140,7 @@ python3 client.py --target-ip 192.168.0.19 --target-port 4000 --timeout 1
     - SSH into `192.168.0.19` and run the proxy server:
       ```bash
       ssh developer@192.168.0.19
-      python3 proxy_server.py --listen-ip 192.168.0.19 --listen-port 4000 \
+      python3 proxy.py --listen-ip 192.168.0.19 --listen-port 4000 \
       --target-ip 192.168.0.18 --target-port 5000 \
       --client-drop 0 --server-drop 0 \
       --client-delay 0 --server-delay 0 \

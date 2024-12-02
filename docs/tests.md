@@ -64,7 +64,7 @@ and complexity for comprehensive testing.
 
 ```bash
 # Test Case 1: No Drop, No Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 0 --server-delay 0 \
@@ -83,7 +83,7 @@ delay probabilities.
 
 ```bash
 # Test Case 2: 50% Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 50 --server-delay 0 \
@@ -93,7 +93,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 5: 100% Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 100 --server-delay 0 \
@@ -107,7 +107,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 3: 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 0 --server-delay 50 \
@@ -117,7 +117,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 6: 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 0 --server-delay 100 \
@@ -131,7 +131,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 4: 50% Client Delay and 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 50 --server-delay 50 \
@@ -141,7 +141,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 7: 100% Client Delay and 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 100 --server-delay 100 \
@@ -151,7 +151,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 8: 50% Client Delay and 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 50 --server-delay 100 \
@@ -161,7 +161,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 9: 100% Client Delay and 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 100 --server-delay 50 \
@@ -181,7 +181,7 @@ This section explores the effects of packet drops without any delay interference
 
 ```bash
 # Test Case 10: 50% Client Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 0 \
 --client-delay 0 --server-delay 0 \
@@ -191,7 +191,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 11: 100% Client Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 0 \
 --client-delay 0 --server-delay 0 \
@@ -205,7 +205,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 12: 50% Server Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 50 \
 --client-delay 0 --server-delay 0 \
@@ -215,7 +215,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 13: 100% Server Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 100 \
 --client-delay 0 --server-delay 0 \
@@ -229,7 +229,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 14: 50% Client Drop and 50% Server Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 50 \
 --client-delay 0 --server-delay 0 \
@@ -239,7 +239,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 15: 100% Client Drop and 50% Server Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 50 \
 --client-delay 0 --server-delay 0 \
@@ -249,7 +249,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 16: 50% Client Drop and 100% Server Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 100 \
 --client-delay 0 --server-delay 0 \
@@ -259,7 +259,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 17: 100% Client Drop and 100% Server Drop
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 100 \
 --client-delay 0 --server-delay 0 \
@@ -280,7 +280,7 @@ latency interact on the client side.
 
 ```bash
 # Test Case 18: 50% Client Drop + 50% Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 0 \
 --client-delay 50 --server-delay 0 \
@@ -290,7 +290,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 19: 50% Client Drop + 100% Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 0 \
 --client-delay 100 --server-delay 0 \
@@ -300,7 +300,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 20: 100% Client Drop + 50% Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 0 \
 --client-delay 50 --server-delay 0 \
@@ -310,7 +310,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 21: 100% Client Drop + 100% Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 0 \
 --client-delay 100 --server-delay 0 \
@@ -331,7 +331,7 @@ affect server behavior independently.
 
 ```bash
 # Test Case 22: 50% Server Drop + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 50 \
 --client-delay 0 --server-delay 50 \
@@ -341,7 +341,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 23: 50% Server Drop + 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 50 \
 --client-delay 0 --server-delay 100 \
@@ -351,7 +351,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 24: 100% Server Drop + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 100 \
 --client-delay 0 --server-delay 50 \
@@ -361,7 +361,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 25: 100% Server Drop + 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 100 \
 --client-delay 0 --server-delay 100 \
@@ -380,7 +380,7 @@ simultaneously, ensuring thorough testing of symmetric and asymmetric conditions
 
 ```bash
 # Test Case 26: 50% Client Drop + 50% Server Drop + 50% Client Delay + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 50 \
 --client-delay 50 --server-delay 50 \
@@ -390,7 +390,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 27: 100% Client Drop + 50% Server Drop + 100% Client Delay + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 50 \
 --client-delay 100 --server-delay 50 \
@@ -400,7 +400,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 28: 50% Client Drop + 100% Server Drop + 50% Client Delay + 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 100 \
 --client-delay 50 --server-delay 100 \
@@ -410,7 +410,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 29: 100% Client Drop + 100% Server Drop + 100% Client Delay + 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 100 \
 --client-delay 100 --server-delay 100 \
@@ -420,7 +420,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 30: 50% Client Drop + 0% Server Drop + 50% Client Delay + 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 0 \
 --client-delay 50 --server-delay 100 \
@@ -430,7 +430,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 31: 0% Client Drop + 50% Server Drop + 100% Client Delay + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 50 \
 --client-delay 100 --server-delay 50 \
@@ -440,7 +440,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 32: 50% Client Drop + 100% Server Drop + 100% Client Delay + 0% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 100 \
 --client-delay 100 --server-delay 0 \
@@ -450,7 +450,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 33: 100% Client Drop + 50% Server Drop + 0% Client Delay + 100% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 100 --server-drop 50 \
 --client-delay 0 --server-delay 100 \
@@ -460,7 +460,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 34: 50% Client Drop + 100% Server Drop + 50% Client Delay + 0% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 100 \
 --client-delay 50 --server-delay 0 \
@@ -470,7 +470,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 35: 0% Client Drop + 50% Server Drop + 50% Client Delay + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 50 \
 --client-delay 50 --server-delay 50 \
@@ -480,7 +480,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 36: 50% Client Drop + 0% Server Drop + 100% Client Delay + 50% Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 50 --server-drop 0 \
 --client-delay 100 --server-delay 50 \
@@ -531,7 +531,7 @@ the protocol's handling of consistent delay.
 
 ```bash
 # Test Case 37: Fixed 500 ms Client Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 50 --server-delay 0 \
@@ -541,7 +541,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 38: Fixed 500 ms Server Delay
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 0 --server-delay 50 \
@@ -562,7 +562,7 @@ scenarios.
 
 ```bash
 # Test Case 39: Client Delay Beyond Retry Timeout
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 100 --server-delay 0 \
@@ -572,7 +572,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 40: Server Delay Beyond Retry Timeout
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 0 --server-delay 100 \
@@ -582,7 +582,7 @@ python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
 
 ```bash
 # Test Case 41: Both Client and Server Delay Beyond Retry Timeout
-python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0 --server-drop 0 \
 --client-delay 100 --server-delay 100 \
@@ -604,7 +604,7 @@ to modify drop chances, delay probabilities, and delay times without restarting 
 1. **Start the Proxy Server**  
    Run the proxy server with the base case configuration:
    ```bash
-   python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+   python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
    --target-ip 127.0.0.1 --target-port 5000 \
    --client-drop 0 --server-drop 0 \
    --client-delay 0 --server-delay 0 \
@@ -645,7 +645,7 @@ Below is an example of testing parameter changes dynamically.
       ```
     - **Proxy:**
       ```bash
-      python3 proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+      python3 proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
       --target-ip 127.0.0.1 --target-port 5000 \
       --client-drop 0 --server-drop 0 \
       --client-delay 0 --server-delay 0 \

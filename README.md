@@ -135,7 +135,7 @@ The proxy server relays packets between the client and server while simulating n
 Run the proxy server:
 
 ```bash
-python proxy_server.py --listen-ip <IP> --listen-port <PORT> \
+python proxy.py --listen-ip <IP> --listen-port <PORT> \
 --target-ip <SERVER_IP> --target-port <SERVER_PORT> \
 --client-drop <VALUE> --server-drop <VALUE> \
 --client-delay <VALUE> --server-delay <VALUE> \
@@ -146,7 +146,7 @@ python proxy_server.py --listen-ip <IP> --listen-port <PORT> \
 **Example:**
 
 ```bash
-python proxy_server.py --listen-ip 127.0.0.1 --listen-port 4000 \
+python proxy.py --listen-ip 127.0.0.1 --listen-port 4000 \
 --target-ip 127.0.0.1 --target-port 5000 \
 --client-drop 0.1 --server-drop 0.2 \
 --client-delay 0.3 --server-delay 0.4 \
