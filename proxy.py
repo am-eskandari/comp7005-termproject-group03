@@ -98,15 +98,27 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                           message, None)
                 continue
 
-            # Check if the message is an acknowledgment
+            # Check if the message is an acknowledgment or RESEND_ACK
             if message.startswith("ACK:"):
                 seq_number = message.split(":")[1]
                 is_ack = True
                 message_content = None
+            elif message.startswith("RESEND_ACK:"):
+                seq_number = message.split(":")[1]
+                print(f"🔄 Proxy received RESEND_ACK for SEQ {seq_number} from {addr}.")
+                # Forward the RESEND_ACK without treating it as a normal sequence
+                proxy_socket.sendto(data, (server_ip, server_port))
+                continue
             else:
                 seq_number = message.split(":", 1)[0] if ":" in message else None
                 is_ack = False
                 message_content = message.split(":", 1)[1] if ":" in message else ""
+
+            try:
+                seq_number = int(seq_number)  # Validate sequence number
+            except ValueError:
+                print(f"⚠️ Proxy ignored invalid sequence: {seq_number}.")
+                continue
 
             latency = (datetime.now() - start_time).total_seconds() * 1000
 

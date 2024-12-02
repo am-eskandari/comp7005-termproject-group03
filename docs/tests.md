@@ -43,11 +43,11 @@ SSH into the server machine (`192.168.0.20`) and start the server process:
 
 ### **3. Start the Proxy (Default Configuration: Test Case 0)**
 
-SSH into the proxy machine (`192.168.0.21`) and start the proxy server with the default settings:
+SSH into the proxy machine (`192.168.0.20`) and start the proxy server with the default settings:
 
    ```bash
-   ssh developer@192.168.0.21
-   python proxy.py --listen-ip 192.168.0.21 --listen-port 4000 \
+   ssh developer@192.168.0.20
+   python proxy.py --listen-ip 192.168.0.20 --listen-port 4000 \
    --target-ip 192.168.0.20 --target-port 5000 \
    --client-drop 0 --server-drop 0 \
    --client-delay 0 --server-delay 0 \
@@ -60,7 +60,7 @@ SSH into the proxy machine (`192.168.0.21`) and start the proxy server with the 
 Modify proxy parameters dynamically without restarting the server by sending commands to the control port (`4500`):
 
    ```bash
-   echo "SET client-drop 0.3 SET server-delay 0.5 SET client-delay-time 200" | nc -u 192.168.0.21 4500
+   echo "SET client-drop 0.3 SET server-delay 0.5 SET client-delay-time 200" | nc -u 192.168.0.20 4500
    ```
 
 ##### Available Parameters
@@ -81,7 +81,7 @@ Modify proxy parameters dynamically without restarting the server by sending com
 Directly execute the client on the machine (`192.168.0.88`) to test communication:
 
    ```bash
-   python client.py --target-ip 192.168.0.21 --target-port 4000 --timeout 2000
+   python client.py --target-ip 192.168.0.20 --target-port 4000 --timeout 2000
    ```
 
 ---
@@ -104,13 +104,13 @@ Review the following log files to confirm communication details and results:
 1. **Copy the File**:
    Use the `scp` command to transfer your script to the appropriate machine. For example:
    ```bash
-   scp "/path/to/script.py" developer@192.168.0.21:/home/developer/Public/
+   scp "/path/to/script.py" developer@192.168.0.20:/home/developer/Public/
    ```
 
 2. **Verify the File**:
    SSH into the machine and confirm the file is present:
    ```bash
-   ssh developer@192.168.0.21
+   ssh developer@192.168.0.20
    ls -l /home/developer/Public/
    ```
 
@@ -193,145 +193,154 @@ Use the following inputs on the client side to validate the protocol's behavior 
 
 ---
 
-## **1. Baseline Scenario (No Drop or Delay)**
+### **1. Baseline Scenario (No Drop or Delay)**
 
 This scenario tests the protocol under ideal network conditions, with no packet drops or delays. It establishes a
 baseline for comparing the performance of other configurations.
 
+#### **Test Case 1: No Drop, No Delay**
+
 ```bash
-# Test Case 1: No Drop, No Delay
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ---
 
-## **2. Scenarios with Delays (No Packet Drops)**
+### **2. Scenarios with Delays (No Packet Drops)**
 
-This set of tests explores how introducing delays affects the communication between the client and server. Delays can
-occur on the client side, the server side, or both, and their effects are analyzed separately and in combination.
+#### **2.1 Client-Side Delays**
 
-### **2.1 Client-Side Delays**
+These scenarios apply delays only to the client. This helps test how the system responds to slower message transmission
+from the client.
 
-In these scenarios, delays are applied only to the client. This helps test how the system responds to slower message
-transmission from the client.
+#### **Test Case 2: 50% Client Delay (0.5 Probability)**
 
 ```bash
-# Test Case 2: 50% Client Delay (0.5 Probability)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
-```bash
-# Test Case 3: 100% Client Delay (1.0 Probability)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
-```
-
----
-
-### **2.2 Server-Side Delays**
-
-In these scenarios, delays are applied only to the server. This evaluates the system's handling of slower message
-responses from the server.
+#### **Test Case 3: 100% Client Delay (1.0 Probability)**
 
 ```bash
-# Test Case 4: 50% Server Delay (0.5 Probability)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
-```
-
-```bash
-# Test Case 5: 100% Server Delay (1.0 Probability)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ---
 
-### **2.3 Combined Client and Server Delays**
+#### **2.2 Server-Side Delays**
 
-These scenarios introduce delays on both the client and server sides simultaneously. Testing these combinations helps
-analyze the compounded effects of delays on both ends.
+These scenarios apply delays only to the server. This evaluates the system's handling of slower message responses from
+the server.
+
+#### **Test Case 4: 50% Server Delay (0.5 Probability)**
 
 ```bash
-# Test Case 6: 50% Client Delay (0.5) and 50% Server Delay (0.5)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
-```bash
-# Test Case 7: 100% Client Delay (1.0) and 100% Server Delay (1.0)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
-```
+#### **Test Case 5: 100% Server Delay (1.0 Probability)**
 
 ```bash
-# Test Case 8: 50% Client Delay (0.5) and 100% Server Delay (1.0)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
-```
-
-```bash
-# Test Case 9: 100% Client Delay (1.0) and 50% Server Delay (0.5)
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ---
 
-## **3. Drop Configurations (No Delay)**
+#### **2.3 Combined Client and Server Delays**
 
-This section explores the effects of packet drops without any delay interference. The tests are divided into scenarios
-focusing on client-side drops, server-side drops, and a combination of both.
+These scenarios introduce delays on both the client and server sides simultaneously to analyze the compounded effects of
+delays.
+
+#### **Test Case 6: 50% Client Delay (0.5) and 50% Server Delay (0.5)**
+
+```bash
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 7: 100% Client Delay (1.0) and 100% Server Delay (1.0)**
+
+```bash
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 8: 50% Client Delay (0.5) and 100% Server Delay (1.0)**
+
+```bash
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 9: 100% Client Delay (1.0) and 50% Server Delay (0.5)**
+
+```bash
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
+```
 
 ---
 
-### **3.1 Client-Side Drops**
+### **3. Drop Configurations (No Delay)**
+
+#### **3.1 Client-Side Drops**
 
 These tests simulate packet drops occurring only on the client side.
 
-```bash
-# Test Case 10: 50% Client Drop (0.5 Probability)
-echo "SET client-drop=0.5 server-drop=0.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
-```
+#### **Test Case 10: 50% Client Drop (0.5 Probability)**
 
 ```bash
-# Test Case 11: 100% Client Drop (1.0 Probability)
-echo "SET client-drop=1.0 server-drop=0.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 11: 100% Client Drop (1.0 Probability)**
+
+```bash
+echo "SET client-drop=1.0 server-drop=0.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ---
 
-### **3.2 Server-Side Drops**
+#### **3.2 Server-Side Drops**
 
 These tests simulate packet drops occurring only on the server side.
 
-```bash
-# Test Case 12: 50% Server Drop (0.5 Probability)
-echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
-```
+#### **Test Case 12: 50% Server Drop (0.5 Probability)**
 
 ```bash
-# Test Case 13: 100% Server Drop (1.0 Probability)
-echo "SET client-drop=0.0 server-drop=1.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 13: 100% Server Drop (1.0 Probability)**
+
+```bash
+echo "SET client-drop=0.0 server-drop=1.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ---
 
-### **3.3 Combined Client and Server Drops**
+#### **3.3 Combined Client and Server Drops**
 
 These tests simulate packet drops occurring on both the client and server sides simultaneously.
 
-```bash
-# Test Case 14: 50% Client Drop (0.5) and 50% Server Drop (0.5)
-echo "SET client-drop=0.5 server-drop=0.5 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
-```
+#### **Test Case 14: 50% Client Drop (0.5) and 50% Server Drop (0.5)**
 
 ```bash
-# Test Case 15: 100% Client Drop (1.0) and 50% Server Drop (0.5)
-echo "SET client-drop=1.0 server-drop=0.5 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.5 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
-```bash
-# Test Case 16: 50% Client Drop (0.5) and 100% Server Drop (1.0)
-echo "SET client-drop=0.5 server-drop=1.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
-```
+#### **Test Case 15: 100% Client Drop (1.0) and 50% Server Drop (0.5)**
 
 ```bash
-# Test Case 17: 100% Client Drop (1.0) and 100% Server Drop (1.0)
-echo "SET client-drop=1.0 server-drop=1.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=1.0 server-drop=0.5 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 16: 50% Client Drop (0.5) and 100% Server Drop (1.0)**
+
+```bash
+echo "SET client-drop=0.5 server-drop=1.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
+```
+
+#### **Test Case 17: 100% Client Drop (1.0) and 100% Server Drop (1.0)**
+
+```bash
+echo "SET client-drop=1.0 server-drop=1.0 client-delay=0.0 server-delay=0.0 client-delay-time=0 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ---
@@ -347,22 +356,22 @@ latency interact on the client side.
 
 ```bash
 # Test Case 18: 50% Client Drop (0.5) + 50% Client Delay (0.5)
-echo "SET client-drop=0.5 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 19: 50% Client Drop (0.5) + 100% Client Delay (1.0)
-echo "SET client-drop=0.5 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 20: 100% Client Drop (1.0) + 50% Client Delay (0.5)
-echo "SET client-drop=1.0 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=1.0 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 21: 100% Client Drop (1.0) + 100% Client Delay (1.0)
-echo "SET client-drop=1.0 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=1.0 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ---
@@ -378,22 +387,22 @@ affect server behavior independently.
 
 ```bash
 # Test Case 22: 50% Server Drop (0.5) + 50% Server Delay (0.5)
-echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 23: 50% Server Drop (0.5) + 100% Server Delay (1.0)
-echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 24: 100% Server Drop (1.0) + 50% Server Delay (0.5)
-echo "SET client-drop=0.0 server-drop=1.0 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=1.0 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 25: 100% Server Drop (1.0) + 100% Server Delay (1.0)
-echo "SET client-drop=0.0 server-drop=1.0 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=1.0 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ---
@@ -407,61 +416,58 @@ simultaneously, ensuring thorough testing of symmetric and asymmetric conditions
 
 ```bash
 # Test Case 26: 50% Client Drop (0.5) + 50% Server Drop (0.5) + 50% Client Delay (0.5) + 50% Server Delay (0.5)
-echo "SET client-drop=0.5 server-drop=0.5 client-delay=0.5 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.5 client-delay=0.5 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 27: 100% Client Drop (1.0) + 50% Server Drop (0.5) + 100% Client Delay (1.0) + 50% Server Delay (0.5)
-echo "SET client-drop=1.0 server-drop=0.5 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=1.0 server-drop=0.5 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 28: 50% Client Drop (0.5) + 100% Server Drop (1.0) + 50% Client Delay (0.5) + 100% Server Delay (1.0)
-echo "SET client-drop=0.5 server-drop=1.0 client-delay=0.5 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=1.0 client-delay=0.5 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 29: 100% Client Drop (1.0) + 100% Server Drop (1.0) + 100% Client Delay (1.0) + 100% Server Delay (1.0)
-echo "SET client-drop=1.0 server-drop=1.0 client-delay=1.0 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=1.0 server-drop=1.0 client-delay=1.0 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 30: 50% Client Drop (0.5) + 0% Server Drop (0.0) + 50% Client Delay (0.5) + 100% Server Delay (1.0)
-echo "SET client-drop=0.5 server-drop=0.0 client-delay=0.5 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.0 client-delay=0.5 server-delay=1.0 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 31: 0% Client Drop (0.0) + 50% Server Drop (0.5) + 100% Client Delay (1.0) + 50% Server Delay (0.5)
-echo "SET client-drop=0.0 server-drop=0.5 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.5 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 32: 50% Client Drop (0.5) + 100% Server Drop (1.0) + 100% Client Delay (1.0) + 0% Server Delay (0.0)
-echo "SET client-drop=0.5 server-drop=1.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=1.0 client-delay=1.0 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 33: 100% Client Drop (1.0) + 50% Server Drop (0.5) + 0% Client Delay (0.0) + 100% Server Delay (1.0)
-echo "SET client-drop=1.0 server-drop=0.5 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=1.0 server-drop=0.5 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 34: 50% Client Drop (0.5) + 100% Server Drop (1.0) + 50% Client Delay (0.5) + 0% Server Delay (0.0)
-echo "SET client-drop=0.5 server-drop=1.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=1.0 client-delay=0.5 server-delay=0.0 client-delay-time=100-500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 35: 0% Client Drop (0.0) + 50% Server Drop (0.5) + 50% Client Delay (0.5) + 50% Server Delay (0.5)
-echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.5 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.0 server-drop=0.5 client-delay=0.5 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 36: 50% Client Drop (0.5) + 0% Server Drop (0.0) + 100% Client Delay (1.0) + 50% Server Delay (0.5)
-echo "SET client-drop=0.5 server-drop=0.0 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.21 4500
+echo "SET client-drop=0.5 server-drop=0.0 client-delay=1.0 server-delay=0.5 client-delay-time=100-500 server-delay-time=200-600" | nc -u 192.168.0.20 4500
 ```
-
-Here’s the updated **7. Additional Delay Time Test Cases** and **8. Changing Parameters Dynamically** sections, modified
-to use the new parameter convention, corrected syntax, and ensure consistency:
 
 ---
 
@@ -479,7 +485,7 @@ For all the tests in this section, use the following commands:
 #### **1. Start the Server**
 
 ```bash
-python server.py --listen-ip 127.0.0.1 --listen-port 5000
+python server.py --listen-ip 192.168.0.19 --listen-port 5000
 ```
 
 #### **2. Start the Proxy**
@@ -489,7 +495,7 @@ Use the commands provided in the test cases below.
 #### **3. Start the Client**
 
 ```bash
-python client.py --target-ip 127.0.0.1 --target-port 4000 --timeout 1000
+python client.py --target-ip 192.168.0.20 --target-port 4000 --timeout 1000
 ```
 
 ---
@@ -503,12 +509,12 @@ the protocol's handling of consistent delay.
 
 ```bash
 # Test Case 37: Fixed 500 ms Client Delay
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=500 server-delay-time=0" | nc -u 127.0.0.1 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.5 server-delay=0.0 client-delay-time=500 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 38: Fixed 500 ms Server Delay
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=500" | nc -u 127.0.0.1 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=0.5 client-delay-time=0 server-delay-time=500" | nc -u 192.168.0.20 4500
 ```
 
 ---
@@ -522,17 +528,17 @@ scenarios.
 
 ```bash
 # Test Case 39: Client Delay Beyond Retry Timeout
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=2000 server-delay-time=0" | nc -u 127.0.0.1 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=0.0 client-delay-time=2000 server-delay-time=0" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 40: Server Delay Beyond Retry Timeout
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=2000" | nc -u 127.0.0.1 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=0.0 server-delay=1.0 client-delay-time=0 server-delay-time=2000" | nc -u 192.168.0.20 4500
 ```
 
 ```bash
 # Test Case 41: Both Client and Server Delay Beyond Retry Timeout
-echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=1.0 client-delay-time=2000 server-delay-time=2000" | nc -u 127.0.0.1 4500
+echo "SET client-drop=0.0 server-drop=0.0 client-delay=1.0 server-delay=1.0 client-delay-time=2000 server-delay-time=2000" | nc -u 192.168.0.20 4500
 ```
 
 ---

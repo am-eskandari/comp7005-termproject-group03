@@ -464,4 +464,3 @@ def test_proxy_arguments(args, expected_output):
 ])
 def test_client_arguments(args, expected_output):
     _test_arguments(parse_client_arguments, args, expected_output)
-   

@@ -75,6 +75,17 @@ def udp_server(listen_ip, listen_port):
                           listen_port, None, latency_ms)
                 continue
 
+            # Check for RESEND_ACK requests
+            if decoded_data.startswith("RESEND_ACK:"):
+                sequence_number = int(decoded_data.split(":")[1])
+                if sequence_number in acknowledgment_cache:
+                    ack_message, timestamp = acknowledgment_cache[sequence_number]
+                    server_socket.sendto(ack_message.encode(), addr)
+                    print(f"📤 Resent acknowledgment: {ack_message} for SEQ {sequence_number}")
+                else:
+                    print(f"⚠️ RESEND_ACK requested for SEQ {sequence_number}, but no such acknowledgment exists.")
+                continue
+
             # Extract the sequence number and message
             sequence_number, message = decoded_data.split(":", 1)
             sequence_number = int(sequence_number)
