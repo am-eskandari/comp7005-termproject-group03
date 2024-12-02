@@ -41,6 +41,7 @@ def udp_client(server_ip, server_port, timeout=2):
     client_socket.settimeout(timeout)
 
     sequence_number = 1  # Tracks the sequence number for each message
+    auto_send_count = 9  # Number of additional messages to auto-send
 
     print(f"🚀 Client started. Sending messages to {server_ip}:{server_port}\n")
 
@@ -49,7 +50,7 @@ def udp_client(server_ip, server_port, timeout=2):
 
     try:
         while True:
-            # Get the message input from the user
+            # Get the first message input from the user
             message = input("📤 Enter message to send (or type 'exit' to quit): ")
             if message.lower() == "exit":
                 # Send a termination message to the server
@@ -63,7 +64,7 @@ def udp_client(server_ip, server_port, timeout=2):
 
             for attempt in range(5):  # Retry up to 5 times
                 try:
-                    # Send the message to the server and record the time
+                    # Send the first message
                     send_time = datetime.now()
                     client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
 
@@ -109,16 +110,36 @@ def udp_client(server_ip, server_port, timeout=2):
                                   source_ip, source_port, server_ip, server_port, message, None)
                     print(f"⏳ Timeout! Retrying... (Attempt {attempt + 1})")
             else:
-                # If all attempts fail, request a resend of the acknowledgment
+                # If all attempts fail, notify the user and log the failure
                 if source_ip is not None and source_port is not None:
                     log_event(client_logger, "Failed", sequence_number, None,
                               source_ip, source_port, server_ip, server_port, message, None)
                 print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 5 attempts.\n")
 
-                # Send a RESEND_ACK request to the server
-                resend_request = f"RESEND_ACK:{sequence_number}"
-                client_socket.sendto(resend_request.encode(), (server_ip, server_port))
-                print(f"🔄 Requested server to resend ACK for SEQ {sequence_number}.")
+            # Automatically send additional messages
+            for i in range(auto_send_count):
+                auto_message = f"hello there {i + 2}"
+                message_with_seq = f"{sequence_number}:{auto_message}"
+                for attempt in range(5):
+                    try:
+                        send_time = datetime.now()
+                        client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
+                        print(f"✅ [SEQ {sequence_number}] Sent: '{auto_message}'")
+
+                        # Wait for acknowledgment
+                        data, addr = client_socket.recvfrom(1024)
+                        ack_message = data.decode()
+                        if ack_message.startswith("ACK:"):
+                            ack = int(ack_message.split(":")[1])
+                            if ack == sequence_number:
+                                latency_ms = (datetime.now() - send_time).total_seconds() * 1000
+                                print(f"📥 [ACK {ack}] Received for '{auto_message}' (Latency: {latency_ms:.2f} ms)\n")
+                                sequence_number += 1
+                                break
+                    except socket.timeout:
+                        print(f"⏳ Timeout for '{auto_message}'! Retrying... (Attempt {attempt + 1})")
+                else:
+                    print(f"❌ Failed to send '{auto_message}' after 5 attempts.")
 
     except KeyboardInterrupt:
         print("\n👋 Exiting client. Sending termination message to server...")
