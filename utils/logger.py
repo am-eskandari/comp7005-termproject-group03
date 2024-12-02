@@ -51,6 +51,6 @@ def log_event(logger, event, sequence, acknowledgment, src_ip, src_port, dest_ip
 
 
 # Loggers for each module
-client_logger = create_logger('client_logger', 'client_packet_logs.log')
-server_logger = create_logger('server_logger', 'server_packet_logs.log')
-proxy_logger = create_logger('proxy_logger', 'proxy_packet_logs.log')
+client_logger = create_logger('client_logger', 'packet_logs_client.log')
+server_logger = create_logger('server_logger', 'packet_logs_server.log')
+proxy_logger = create_logger('proxy_logger', 'packet_logs_proxy.log')
