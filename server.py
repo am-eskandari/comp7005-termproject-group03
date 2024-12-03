@@ -109,7 +109,7 @@ def udp_server(listen_ip, listen_port):
                 print(f"📤 Duplicate acknowledgment suppressed: ACK:{sequence_number}")
                 continue
 
-            # Store the receive timestamp for the sequence number
+            # Store the received timestamp for the sequence number
             packet_timestamps[sequence_number] = receive_time
 
             # Determine if the packet is in order or out of order
