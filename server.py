@@ -31,6 +31,8 @@ def udp_server(listen_ip, listen_port):
     processed_sequences = set()  # Tracks processed sequence numbers
     acknowledgment_cache = {}  # Cache for sent acknowledgments
     packet_buffer = {}  # Buffer for out-of-order packets
+    lost_packets = 0  # Track lost packets
+    retransmitted_packets = 0  # Track retransmitted packets
 
     print("\n🗑 Waiting for messages...\n")
 
@@ -66,6 +68,9 @@ def udp_server(listen_ip, listen_port):
                 if sequence_number in acknowledgment_cache:
                     ack_message, _ = acknowledgment_cache[sequence_number]
                     server_socket.sendto(ack_message.encode(), addr)
+                    retransmitted_packets += 1
+                    log_event(server_logger, "Retransmit", sequence_number, None, listen_ip, listen_port, addr[0],
+                              addr[1], None, None)
                     print(f"📤 Resent acknowledgment: {ack_message} for SEQ {sequence_number}")
                 else:
                     print(f"⚠️ RESEND_ACK requested for SEQ {sequence_number}, but no such acknowledgment exists.")
@@ -93,17 +98,23 @@ def udp_server(listen_ip, listen_port):
             if sequence_number > expected_sequence_number:
                 print(f"🔄 [OUT-OF-ORDER] Buffering SEQ {sequence_number}. Expected: {expected_sequence_number}")
                 packet_buffer[sequence_number] = (message, addr, receive_time)
+                lost_packets += 1
+                log_event(server_logger, "Lost", sequence_number, None, addr[0], addr[1], listen_ip, listen_port,
+                          message, None)
                 continue
 
             # Process the current packet
+            latency_ms = (datetime.now() - receive_time).total_seconds() * 1000
             print(f"✅ [SEQ {sequence_number}] Received: '{message}' from {addr}")
             log_event(server_logger, "Received", sequence_number, None, addr[0], addr[1], listen_ip, listen_port,
-                      message, None)
+                      message, latency_ms)
 
             # Send acknowledgment for the current sequence
             ack_message = f"ACK:{sequence_number}"
             acknowledgment_cache[sequence_number] = (ack_message, datetime.now())
             server_socket.sendto(ack_message.encode(), addr)
+            log_event(server_logger, "Sent", sequence_number, None, listen_ip, listen_port, addr[0], addr[1],
+                      ack_message, None)
             print(f"📤 Sent acknowledgment: {ack_message}")
 
             last_acknowledged_sequence = sequence_number
@@ -112,13 +123,14 @@ def udp_server(listen_ip, listen_port):
             # Process buffered packets in order
             while expected_sequence_number in packet_buffer:
                 buffered_message, buffered_addr, buffered_time = packet_buffer.pop(expected_sequence_number)
+                buffered_latency_ms = (datetime.now() - buffered_time).total_seconds() * 1000
                 print(f"✅ [SEQ {expected_sequence_number}] Processed from buffer: '{buffered_message}'")
                 ack_message = f"ACK:{expected_sequence_number}"
                 acknowledgment_cache[expected_sequence_number] = (ack_message, datetime.now())
                 server_socket.sendto(ack_message.encode(), buffered_addr)
                 print(f"📤 Sent acknowledgment: {ack_message} for buffered SEQ {expected_sequence_number}")
                 log_event(server_logger, "Received (Buffered)", expected_sequence_number, None, buffered_addr[0],
-                          buffered_addr[1], listen_ip, listen_port, buffered_message, None)
+                          buffered_addr[1], listen_ip, listen_port, buffered_message, buffered_latency_ms)
                 last_acknowledged_sequence = expected_sequence_number
                 expected_sequence_number += 1
 
