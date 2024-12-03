@@ -18,19 +18,42 @@ proxy_config = {
     "server-delay-time": (0, 0),  # Tuple for range (min, max) in milliseconds
 }
 
-# Cache for deduplication
-dedup_cache = {
-    "client_to_server": set(),
-    "server_to_client": set(),
-}
-
 # Dictionary to store delayed packets
 delayed_packets = {
     "client-to-server": [],
     "server-to-client": []
 }
 
-CACHE_TIMEOUT = 10  # Time in seconds to keep sequence numbers in cache
+# Deduplication cache with timestamps
+dedup_cache = {
+    "client-to-server": {},  # Maps sequence numbers to their receive time
+    "server-to-client": {}  # Same for ACKs
+}
+CACHE_TIMEOUT = 10  # Cache timeout in seconds
+
+# Track last acknowledged sequence for handling retransmissions
+last_acknowledged_sequence = {
+    "client-to-server": 0,
+    "server-to-client": 0
+}
+
+
+def is_retransmission(direction, seq_number):
+    """
+    Check if the packet is a retransmission based on the last acknowledged sequence number.
+    """
+    return seq_number > last_acknowledged_sequence[direction]
+
+
+def cleanup_cache(direction):
+    """
+    Cleanup expired entries in the deduplication cache.
+    """
+    current_time = time.time()
+    dedup_cache[direction] = {
+        seq: ts for seq, ts in dedup_cache[direction].items()
+        if current_time - ts < CACHE_TIMEOUT
+    }
 
 
 def clear_expired_cache():
@@ -66,6 +89,10 @@ def process_delayed_packets():
         time.sleep(0.01)  # Sleep briefly to prevent CPU overuse
 
 
+# Shared lock for thread-safe access to proxy_config
+proxy_config_lock = threading.Lock()
+
+
 def handle_drops_and_delays(seq_number, addr, message_content, is_ack, direction, proxy_socket, target_ip, target_port,
                             data):
     """
@@ -73,23 +100,32 @@ def handle_drops_and_delays(seq_number, addr, message_content, is_ack, direction
     """
     config_prefix = "client" if direction == "client-to-server" else "server"
 
-    # Simulate drop
-    if random.random() < proxy_config[f"{config_prefix}-drop"]:
-        print(f"❌ [{direction}] Dropped packet [SEQ {seq_number}] from {addr}")
-        log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], target_ip, target_port,
-                  message_content, None)
-        return False
+    # Acquire the lock to ensure thread-safe access to proxy_config
+    print(f"🔒 Acquiring lock for drop/delay configuration...")
+    with proxy_config_lock:
+        print(f"🔑 Lock acquired for drop/delay configuration.")
 
-    # Simulate delay
-    if random.random() < proxy_config[f"{config_prefix}-delay"]:
-        delay_time = random.randint(*proxy_config[f"{config_prefix}-delay-time"]) / 1000  # Convert ms to seconds
-        send_time = time.time() + delay_time  # Calculate the future send time
-        delayed_packets[direction].append((send_time, data, (target_ip, target_port), addr))
-        print(
-            f"⏳ [{direction}] Scheduled packet [SEQ {seq_number}] from {addr} to be forwarded after {delay_time * 1000:.2f} ms")
-        log_event(proxy_logger, 'Delayed', seq_number, None, addr[0], addr[1], target_ip, target_port,
-                  message_content, None)
-        return False
+        # Simulate drop
+        if random.random() < proxy_config[f"{config_prefix}-drop"]:
+            print(f"❌ [{direction}] Dropped packet [SEQ {seq_number}] from {addr}")
+            log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], target_ip, target_port,
+                      message_content, None)
+            print(f"🔓 Lock released after drop check.")
+            return False
+
+        # Simulate delay
+        if random.random() < proxy_config[f"{config_prefix}-delay"]:
+            delay_time = random.randint(*proxy_config[f"{config_prefix}-delay-time"]) / 1000  # Convert ms to seconds
+            send_time = time.time() + delay_time  # Calculate the future send time
+            delayed_packets[direction].append((send_time, data, (target_ip, target_port), addr))
+            print(
+                f"⏳ [{direction}] Scheduled packet [SEQ {seq_number}] from {addr} to be forwarded after {delay_time * 1000:.2f} ms")
+            log_event(proxy_logger, 'Delayed', seq_number, None, addr[0], addr[1], target_ip, target_port,
+                      message_content, None)
+            print(f"🔓 Lock released after delay scheduling.")
+            return False
+
+    print(f"🔓 Lock released after drop/delay handling.")
 
     # Example conditional for is_ack
     if is_ack:
@@ -103,9 +139,6 @@ def udp_proxy(proxy_socket, server_ip, server_port):
     A proxy server that forwards UDP packets with simulated unreliability.
     """
     client_address = None  # To keep track of the client address
-
-    # Dictionary to track timestamps for accurate latency reporting
-    packet_timestamps = {}
 
     print(f"🚀 Proxy server started. Relaying packets between client and server.\n")
 
@@ -125,70 +158,63 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                           message, None)
                 continue
 
-            # Check if the message is an acknowledgment or RESEND_ACK
+            # Parse message type and sequence number
             if message.startswith("ACK:"):
-                seq_number = message.split(":")[1]
+                seq_number = int(message.split(":")[1])
                 is_ack = True
                 message_content = None
             elif message.startswith("RESEND_ACK:"):
-                seq_number = message.split(":")[1]
+                seq_number = int(message.split(":")[1])
                 print(f"🔄 Proxy received RESEND_ACK for SEQ {seq_number} from {addr}.")
-                # Forward the RESEND_ACK without treating it as a normal sequence
                 proxy_socket.sendto(data, (server_ip, server_port))
                 continue
             else:
-                seq_number = message.split(":", 1)[0] if ":" in message else None
+                seq_number = int(message.split(":", 1)[0])
                 is_ack = False
                 message_content = message.split(":", 1)[1] if ":" in message else ""
 
-            try:
-                seq_number = int(seq_number)  # Validate sequence number
-            except ValueError:
-                print(f"⚠️ Proxy ignored invalid sequence: {seq_number}.")
-                continue
-
-            # Handle client-to-server packets
+            # Determine packet direction
             if addr != (server_ip, server_port):
-                client_address = addr  # Save the client address
-
-                # Handle drops and delays for client-to-server
-                if not handle_drops_and_delays(seq_number, addr, message_content, is_ack, "client-to-server",
-                                               proxy_socket, server_ip, server_port, data):
-                    continue  # Packet was dropped, no need to forward
-
+                direction = "client-to-server"
                 destination = (server_ip, server_port)
-
-            # Handle server-to-client packets
+                client_address = addr
             else:
+                direction = "server-to-client"
                 if not client_address:
                     print("⚠️ No client address to forward to. Dropping packet.")
                     log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], server_ip,
                               server_port, message_content, None)
                     continue
-
-                # Track acknowledgments for retries
-                if is_ack:
-                    ack_tracking_cache[seq_number] = (data, client_address)
-
-                # Handle drops and delays for server-to-client
-                if not handle_drops_and_delays(seq_number, addr, None, is_ack, "server-to-client", proxy_socket,
-                                               client_address[0], client_address[1], data):
-                    continue  # Packet was dropped, no need to forward
-
                 destination = client_address
 
-            # Calculate latency for forwarding
-            forward_time = datetime.now()
-            total_latency = (forward_time - receive_time).total_seconds() * 1000
+            # Cleanup deduplication cache
+            cleanup_cache(direction)
 
-            # Store the receive timestamp for tracking
-            packet_timestamps[seq_number] = receive_time
+            # Check for duplicates or retransmissions
+            if seq_number <= last_acknowledged_sequence[direction]:
+                print(f"🔄 Duplicate or retransmitted packet [SEQ {seq_number}] detected in {direction}.")
+                if seq_number == last_acknowledged_sequence[direction]:
+                    print(f"🟢 Retransmission of acknowledged sequence {seq_number}. Forwarding.")
+                else:
+                    log_event(proxy_logger, 'Duplicate', seq_number, None, addr[0], addr[1], destination[0],
+                              destination[1], None, None)
+                    continue
+
+            # Update deduplication cache and last acknowledged sequence
+            dedup_cache[direction][seq_number] = time.time()
+            if is_ack:
+                last_acknowledged_sequence[direction] = max(last_acknowledged_sequence[direction], seq_number)
+
+            # Handle drops and delays
+            if not handle_drops_and_delays(seq_number, addr, message_content, is_ack, direction, proxy_socket,
+                                           destination[0], destination[1], data):
+                continue  # Packet was dropped or delayed, no need to forward
 
             # Forward the packet
             proxy_socket.sendto(data, destination)
-            print(f"✅ [{addr} -> {destination}] Forwarded packet [SEQ {seq_number}] (Latency: {total_latency:.2f} ms)")
+            print(f"✅ [{addr} -> {destination}] Forwarded packet [SEQ {seq_number}]")
             log_event(proxy_logger, 'Forwarded', seq_number, seq_number if is_ack else None, addr[0], addr[1],
-                      destination[0], destination[1], None, total_latency)
+                      destination[0], destination[1], None, None)
 
         except Exception as e:
             print(f"❌ Proxy server error: {e}")

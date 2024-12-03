@@ -22,23 +22,20 @@ def cleanup_cache():
 def udp_server(listen_ip, listen_port):
     # Create a UDP socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # Bind the socket to the specified IP and port
     server_socket.bind((listen_ip, listen_port))
     print(f"🚀 Server started and listening on {listen_ip}:{listen_port}")
 
-    # Initialize sequence tracking
-    expected_sequence_number = 1  # Tracks the next expected sequence number
-    processed_sequences = set()  # Set to track processed sequence numbers for deduplication
-    acknowledged_sequences = set()  # Set to suppress duplicate acknowledgments
-
-    # Dictionary to store packet receive times for latency calculation
-    packet_timestamps = {}
+    # Sequence tracking
+    expected_sequence_number = 1
+    last_acknowledged_sequence = 0  # Tracks the highest sequence acknowledged
+    processed_sequences = set()  # Tracks processed sequence numbers
+    acknowledgment_cache = {}  # Cache for sent acknowledgments
+    packet_buffer = {}  # Buffer for out-of-order packets
 
     print("\n🗑 Waiting for messages...\n")
 
     while True:
         try:
-            # Cleanup acknowledgment cache periodically
             cleanup_cache()
 
             # Receive data from the client
@@ -49,86 +46,81 @@ def udp_server(listen_ip, listen_port):
                 print(f"⚠️ Received an empty message from {addr}")
                 continue
 
-            # Decode the data
             decoded_data = data.decode()
 
             # Handle termination signal
             if decoded_data == "TERMINATE":
                 print(f"👋 Client {addr} has terminated the session. Resetting sequence.")
-                expected_sequence_number = 1  # Reset sequence tracking
-                processed_sequences.clear()  # Clear processed sequences
-                dedup_cache.clear()  # Clear deduplication cache
-                acknowledgment_cache.clear()  # Clear acknowledgment cache
+                expected_sequence_number = 1
+                last_acknowledged_sequence = 0
+                processed_sequences.clear()
+                acknowledgment_cache.clear()
+                packet_buffer.clear()
                 log_event(server_logger, "Terminate", expected_sequence_number, None, addr[0], addr[1], listen_ip,
                           listen_port, None, None)
                 continue
 
-            # Handle RESEND_ACK requests
+            # Handle RESEND_ACK
             if decoded_data.startswith("RESEND_ACK:"):
                 sequence_number = int(decoded_data.split(":")[1])
                 if sequence_number in acknowledgment_cache:
-                    ack_message, timestamp = acknowledgment_cache[sequence_number]
+                    ack_message, _ = acknowledgment_cache[sequence_number]
                     server_socket.sendto(ack_message.encode(), addr)
                     print(f"📤 Resent acknowledgment: {ack_message} for SEQ {sequence_number}")
                 else:
                     print(f"⚠️ RESEND_ACK requested for SEQ {sequence_number}, but no such acknowledgment exists.")
                 continue
 
-            # Extract the sequence number and message
-            sequence_number, message = decoded_data.split(":", 1)
-            sequence_number = int(sequence_number)
-
-            # Deduplication logic: Ignore packets already processed
-            if sequence_number in processed_sequences:
-                print(f"🔄 Duplicate packet [SEQ {sequence_number}] from {addr}. Ignored.")
-                log_event(server_logger, "Duplicate", sequence_number, None, addr[0], addr[1], listen_ip,
-                          listen_port, message, None)
+            # Parse the sequence number and message
+            try:
+                sequence_number, message = decoded_data.split(":", 1)
+                sequence_number = int(sequence_number)
+            except ValueError:
+                print(f"⚠️ Malformed packet received from {addr}: {decoded_data}")
                 continue
 
-            # Add sequence number to the processed set
-            processed_sequences.add(sequence_number)
-
-            # Suppress duplicate ACKs
-            if sequence_number in acknowledged_sequences:
-                print(f"📤 Duplicate acknowledgment suppressed: ACK:{sequence_number}")
+            # Handle duplicate packets
+            if sequence_number <= last_acknowledged_sequence:
+                print(f"🔄 Duplicate or retransmitted packet [SEQ {sequence_number}] from {addr}. Ignored.")
+                # Resend the acknowledgment for duplicates
+                if sequence_number in acknowledgment_cache:
+                    ack_message, _ = acknowledgment_cache[sequence_number]
+                    server_socket.sendto(ack_message.encode(), addr)
+                    print(f"📤 Resent acknowledgment for duplicate SEQ {sequence_number}")
                 continue
 
-            # Store the received timestamp for the sequence number
-            packet_timestamps[sequence_number] = receive_time
+            # Handle out-of-order packets
+            if sequence_number > expected_sequence_number:
+                print(f"🔄 [OUT-OF-ORDER] Buffering SEQ {sequence_number}. Expected: {expected_sequence_number}")
+                packet_buffer[sequence_number] = (message, addr, receive_time)
+                continue
 
-            # Determine if the packet is in order or out of order
-            if sequence_number == expected_sequence_number:
-                print(f"✅ [SEQ {sequence_number}] Received: '{message}' from {addr}")
-                event = "Received"
-                expected_sequence_number += 1  # Increment the expected sequence number
-            else:
-                print(
-                    f"🔄 [OUT-OF-ORDER] Expected SEQ {expected_sequence_number}, "
-                    f"but got SEQ {sequence_number} from {addr}"
-                )
-                event = "Out-of-Order"
-
-            # Log the received event
-            log_event(server_logger, event, sequence_number, None, addr[0], addr[1], listen_ip, listen_port,
+            # Process the current packet
+            print(f"✅ [SEQ {sequence_number}] Received: '{message}' from {addr}")
+            log_event(server_logger, "Received", sequence_number, None, addr[0], addr[1], listen_ip, listen_port,
                       message, None)
 
-            # Send acknowledgment back with the sequence number
+            # Send acknowledgment for the current sequence
             ack_message = f"ACK:{sequence_number}"
             acknowledgment_cache[sequence_number] = (ack_message, datetime.now())
             server_socket.sendto(ack_message.encode(), addr)
+            print(f"📤 Sent acknowledgment: {ack_message}")
 
-            # Add the sequence number to the acknowledged set
-            acknowledged_sequences.add(sequence_number)
+            last_acknowledged_sequence = sequence_number
+            expected_sequence_number += 1
 
-            # Calculate total latency based on the stored timestamp
-            if sequence_number in packet_timestamps:
-                total_latency_ms = (datetime.now() - packet_timestamps[sequence_number]).total_seconds() * 1000
-                print(f"📤 Sent acknowledgment: {ack_message} (Total Latency: {total_latency_ms:.2f} ms)\n")
-                # Log acknowledgment with latency
-                log_event(server_logger, "Acknowledged", sequence_number, sequence_number, listen_ip, listen_port,
-                          addr[0], addr[1], None, total_latency_ms)
-                # Clean up the timestamp after acknowledgment
-                del packet_timestamps[sequence_number]
+            # Process buffered packets in order
+            while expected_sequence_number in packet_buffer:
+                buffered_message, buffered_addr, buffered_time = packet_buffer.pop(expected_sequence_number)
+                print(f"✅ [SEQ {expected_sequence_number}] Processed from buffer: '{buffered_message}'")
+                ack_message = f"ACK:{expected_sequence_number}"
+                acknowledgment_cache[expected_sequence_number] = (ack_message, datetime.now())
+                server_socket.sendto(ack_message.encode(), buffered_addr)
+                print(f"📤 Sent acknowledgment: {ack_message} for buffered SEQ {expected_sequence_number}")
+                log_event(server_logger, "Received (Buffered)", expected_sequence_number, None, buffered_addr[0],
+                          buffered_addr[1], listen_ip, listen_port, buffered_message, None)
+                last_acknowledged_sequence = expected_sequence_number
+                expected_sequence_number += 1
 
         except KeyboardInterrupt:
             print("\n👋 Server shutting down. Goodbye!")

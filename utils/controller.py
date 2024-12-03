@@ -1,7 +1,11 @@
 import json
+import threading
 
 from utils.logger import control_logger, log_control_event
 from utils.validation import validate_delay_time, validate_chance
+
+# Initialize a threading lock
+control_lock = threading.Lock()
 
 
 def handle_control(control_socket, proxy_config):
@@ -22,40 +26,45 @@ def handle_control(control_socket, proxy_config):
                 changes = updates.split()  # Split by spaces to get individual param=value pairs
                 responses = []
 
-                for change in changes:
-                    if "=" not in change:
-                        msg = f"❌ Invalid format: {change}"
-                        responses.append(msg)
-                        control_logger.error(msg)
-                        continue
+                print(f"🔒 Acquiring lock for configuration update...")
+                with control_lock:  # Lock during updates
+                    print(f"🔑 Lock acquired.")
+                    for change in changes:
+                        if "=" not in change:
+                            msg = f"❌ Invalid format: {change}"
+                            responses.append(msg)
+                            control_logger.error(msg)
+                            continue
 
-                    param, value = change.split("=", 1)
-                    if param in ["client-delay-time", "server-delay-time"]:
-                        try:
-                            old_value = proxy_config[param]
-                            new_value = validate_delay_time(value)  # Validate and parse delay time
-                            proxy_config[param] = new_value
-                            responses.append(f"✅ Updated {param} from {old_value} to {new_value}")
-                            log_control_event(control_logger, param, old_value, new_value)
-                        except ValueError as e:
-                            msg = f"❌ {e}"
+                        param, value = change.split("=", 1)
+                        if param in ["client-delay-time", "server-delay-time"]:
+                            try:
+                                old_value = proxy_config[param]
+                                new_value = validate_delay_time(value)  # Validate and parse delay time
+                                proxy_config[param] = new_value
+                                responses.append(f"✅ Updated {param} from {old_value} to {new_value}")
+                                log_control_event(control_logger, param, old_value, new_value)
+                            except ValueError as e:
+                                msg = f"❌ {e}"
+                                responses.append(msg)
+                                control_logger.error(msg)
+                        elif param in proxy_config:
+                            try:
+                                old_value = proxy_config[param]
+                                new_value = validate_chance(value)  # Validate chance values
+                                proxy_config[param] = new_value
+                                responses.append(f"✅ Updated {param} from {old_value} to {new_value}")
+                                log_control_event(control_logger, param, old_value, new_value)
+                            except ValueError as e:
+                                msg = f"❌ {e}"
+                                responses.append(msg)
+                                control_logger.error(msg)
+                        else:
+                            msg = f"❌ Invalid parameter: {param}"
                             responses.append(msg)
                             control_logger.error(msg)
-                    elif param in proxy_config:
-                        try:
-                            old_value = proxy_config[param]
-                            new_value = validate_chance(value)  # Validate chance values
-                            proxy_config[param] = new_value
-                            responses.append(f"✅ Updated {param} from {old_value} to {new_value}")
-                            log_control_event(control_logger, param, old_value, new_value)
-                        except ValueError as e:
-                            msg = f"❌ {e}"
-                            responses.append(msg)
-                            control_logger.error(msg)
-                    else:
-                        msg = f"❌ Invalid parameter: {param}"
-                        responses.append(msg)
-                        control_logger.error(msg)
+
+                    print(f"🔓 Lock released after configuration update.")
 
                 response = "\n".join(responses)
                 print(f"🔨 {response}")
