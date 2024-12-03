@@ -43,6 +43,9 @@ def udp_client(server_ip, server_port, timeout=2):
     sequence_number = 1  # Tracks the sequence number for each message
     auto_send_count = 9  # Number of additional messages to auto-send
 
+    # Dictionary to store the send timestamp for each sequence
+    send_timestamps = {}
+
     print(f"🚀 Client started. Sending messages to {server_ip}:{server_port}\n")
 
     source_ip = None
@@ -62,10 +65,12 @@ def udp_client(server_ip, server_port, timeout=2):
             # Prepare the message with the sequence number
             message_with_seq = f"{sequence_number}:{message}"
 
+            # Store the send timestamp for the sequence number
+            send_timestamps[sequence_number] = datetime.now()
+
             for attempt in range(5):  # Retry up to 5 times
                 try:
                     # Send the first message
-                    send_time = datetime.now()
                     client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
 
                     # Capture the source IP and port after sending
@@ -88,14 +93,19 @@ def udp_client(server_ip, server_port, timeout=2):
                     else:
                         raise ValueError(f"Unexpected acknowledgment format: {ack_message}")
 
-                    receive_time = datetime.now()
-
                     # Check if the acknowledgment corresponds to the sent sequence number
                     if ack == sequence_number:
-                        latency_ms = (receive_time - send_time).total_seconds() * 1000
-                        print(f"📥 [ACK {ack}] Received from {addr} (Latency: {latency_ms:.2f} ms)\n")
-                        log_event(client_logger, "Acknowledged", sequence_number, ack,
-                                  addr[0], addr[1], server_ip, server_port, None, latency_ms)
+                        # Use the original send timestamp to calculate latency
+                        if ack in send_timestamps:
+                            latency_ms = (datetime.now() - send_timestamps[ack]).total_seconds() * 1000
+                            print(f"📥 [ACK {ack}] Received from {addr} (Latency: {latency_ms:.2f} ms)\n")
+                            log_event(client_logger, "Acknowledged", sequence_number, ack,
+                                      addr[0], addr[1], server_ip, server_port, None, latency_ms)
+                            # Clean up the timestamp for the acknowledged sequence number
+                            del send_timestamps[ack]
+                        else:
+                            print(f"⚠️ No timestamp found for ACK {ack}.")
+
                         sequence_number += 1  # Increment the sequence number for the next message
                         break  # Exit the retry loop on successful acknowledgment
                     else:
@@ -120,9 +130,9 @@ def udp_client(server_ip, server_port, timeout=2):
             for i in range(auto_send_count):
                 auto_message = f"hello there {i + 2}"
                 message_with_seq = f"{sequence_number}:{auto_message}"
+                send_timestamps[sequence_number] = datetime.now()  # Track timestamp for auto-send messages
                 for attempt in range(5):
                     try:
-                        send_time = datetime.now()
                         client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
                         print(f"✅ [SEQ {sequence_number}] Sent: '{auto_message}'")
 
@@ -132,8 +142,9 @@ def udp_client(server_ip, server_port, timeout=2):
                         if ack_message.startswith("ACK:"):
                             ack = int(ack_message.split(":")[1])
                             if ack == sequence_number:
-                                latency_ms = (datetime.now() - send_time).total_seconds() * 1000
+                                latency_ms = (datetime.now() - send_timestamps[ack]).total_seconds() * 1000
                                 print(f"📥 [ACK {ack}] Received for '{auto_message}' (Latency: {latency_ms:.2f} ms)\n")
+                                del send_timestamps[ack]  # Clean up timestamp
                                 sequence_number += 1
                                 break
                     except socket.timeout:

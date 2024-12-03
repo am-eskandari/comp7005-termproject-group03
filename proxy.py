@@ -25,6 +25,12 @@ dedup_cache = {
     "server_to_client": set(),
 }
 
+# Dictionary to store delayed packets
+delayed_packets = {
+    "client-to-server": [],
+    "server-to-client": []
+}
+
 CACHE_TIMEOUT = 10  # Time in seconds to keep sequence numbers in cache
 
 
@@ -74,18 +80,75 @@ def parse_arguments():
 ack_tracking_cache = {}  # Tracks ACK packets for potential retries
 
 
+def process_delayed_packets():
+    """Thread function to forward delayed packets once their delay time expires."""
+    while True:
+        current_time = time.time()
+        for direction in ["client-to-server", "server-to-client"]:
+            remaining_packets = []
+            for packet in delayed_packets[direction]:
+                send_time, data, destination, addr = packet
+                if current_time >= send_time:
+                    try:
+                        proxy_socket.sendto(data, destination)
+                        print(f"✅ [{addr} -> {destination}] Forwarded delayed packet [SEQ {data.decode()}]")
+                        log_event(proxy_logger, 'Forwarded Delayed', None, None, addr[0], addr[1],
+                                  destination[0], destination[1], None, None)
+                    except Exception as e:
+                        print(f"❌ Error forwarding delayed packet: {e}")
+                else:
+                    remaining_packets.append(packet)
+            delayed_packets[direction] = remaining_packets
+        time.sleep(0.01)  # Sleep briefly to prevent CPU overuse
+
+
+def handle_drops_and_delays(seq_number, addr, message_content, is_ack, direction, proxy_socket, target_ip, target_port,
+                            data):
+    """
+    Handles drops and delays for packets in both directions.
+    """
+    config_prefix = "client" if direction == "client-to-server" else "server"
+
+    # Simulate drop
+    if random.random() < proxy_config[f"{config_prefix}-drop"]:
+        print(f"❌ [{direction}] Dropped packet [SEQ {seq_number}] from {addr}")
+        log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], target_ip, target_port,
+                  message_content, None)
+        return False
+
+    # Simulate delay
+    if random.random() < proxy_config[f"{config_prefix}-delay"]:
+        delay_time = random.randint(*proxy_config[f"{config_prefix}-delay-time"]) / 1000  # Convert ms to seconds
+        send_time = time.time() + delay_time  # Calculate the future send time
+        delayed_packets[direction].append((send_time, data, (target_ip, target_port), addr))
+        print(
+            f"⏳ [{direction}] Scheduled packet [SEQ {seq_number}] from {addr} to be forwarded after {delay_time * 1000:.2f} ms")
+        log_event(proxy_logger, 'Delayed', seq_number, None, addr[0], addr[1], target_ip, target_port,
+                  message_content, None)
+        return False
+
+    # Example conditional for is_ack
+    if is_ack:
+        print(f"🟢 Acknowledgment packet [SEQ {seq_number}] handled with delay or drop logic.")
+
+    return True
+
+
 def udp_proxy(proxy_socket, server_ip, server_port):
     """
     A proxy server that forwards UDP packets with simulated unreliability.
     """
     client_address = None  # To keep track of the client address
 
+    # Dictionary to track timestamps for accurate latency reporting
+    packet_timestamps = {}
+
     print(f"🚀 Proxy server started. Relaying packets between client and server.\n")
 
     while True:
         try:
             # Receive data from client or server
-            start_time = datetime.now()
+            receive_time = datetime.now()
             data, addr = proxy_socket.recvfrom(65507)
             message = data.decode()
 
@@ -120,15 +183,13 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                 print(f"⚠️ Proxy ignored invalid sequence: {seq_number}.")
                 continue
 
-            latency = (datetime.now() - start_time).total_seconds() * 1000
-
             # Handle client-to-server packets
             if addr != (server_ip, server_port):
                 client_address = addr  # Save the client address
 
                 # Handle drops and delays for client-to-server
                 if not handle_drops_and_delays(seq_number, addr, message_content, is_ack, "client-to-server",
-                                               proxy_socket, server_ip, server_port):
+                                               proxy_socket, server_ip, server_port, data):
                     continue  # Packet was dropped, no need to forward
 
                 destination = (server_ip, server_port)
@@ -138,7 +199,7 @@ def udp_proxy(proxy_socket, server_ip, server_port):
                 if not client_address:
                     print("⚠️ No client address to forward to. Dropping packet.")
                     log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], server_ip,
-                              server_port, message_content, latency)
+                              server_port, message_content, None)
                     continue
 
                 # Track acknowledgments for retries
@@ -147,42 +208,26 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
                 # Handle drops and delays for server-to-client
                 if not handle_drops_and_delays(seq_number, addr, None, is_ack, "server-to-client", proxy_socket,
-                                               client_address[0], client_address[1]):
+                                               client_address[0], client_address[1], data):
                     continue  # Packet was dropped, no need to forward
 
                 destination = client_address
 
+            # Calculate latency for forwarding
+            forward_time = datetime.now()
+            total_latency = (forward_time - receive_time).total_seconds() * 1000
+
+            # Store the receive timestamp for tracking
+            packet_timestamps[seq_number] = receive_time
+
             # Forward the packet
             proxy_socket.sendto(data, destination)
-            print(f"✅ [{addr} -> {destination}] Forwarded packet [SEQ {seq_number}]")
+            print(f"✅ [{addr} -> {destination}] Forwarded packet [SEQ {seq_number}] (Latency: {total_latency:.2f} ms)")
             log_event(proxy_logger, 'Forwarded', seq_number, seq_number if is_ack else None, addr[0], addr[1],
-                      destination[0], destination[1], None, latency)
+                      destination[0], destination[1], None, total_latency)
 
         except Exception as e:
             print(f"❌ Proxy server error: {e}")
-
-
-def handle_drops_and_delays(seq_number, addr, message_content, is_ack, direction, proxy_socket, target_ip, target_port):
-    """
-    Handles drops and delays for packets in both directions.
-    """
-    config_prefix = "client" if direction == "client-to-server" else "server"
-
-    # Simulate drop
-    if random.random() < proxy_config[f"{config_prefix}-drop"]:
-        print(f"❌ [{direction}] Dropped packet [SEQ {seq_number}] from {addr}")
-        log_event(proxy_logger, 'Dropped', seq_number, None, addr[0], addr[1], target_ip, target_port,
-                  message_content, None)
-        return False
-
-    # Simulate delay
-    if random.random() < proxy_config[f"{config_prefix}-delay"]:
-        delay_time = random.randint(*proxy_config[f"{config_prefix}-delay-time"]) / 1000  # Convert ms to seconds
-        print(
-            f"⏳ [{direction}] Delayed packet [SEQ {seq_number}] from {addr} for {delay_time * 1000:.2f} ms")
-        time.sleep(delay_time)
-
-    return True
 
 
 def main():
@@ -197,6 +242,7 @@ def main():
     proxy_config["server-delay-time"] = args.server_delay_time
 
     # Set up proxy socket
+    global proxy_socket
     proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     proxy_socket.bind((args.listen_ip, args.listen_port))
     print(f"🌐 Proxy server listening on {args.listen_ip}:{args.listen_port}")
@@ -205,6 +251,9 @@ def main():
     control_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     control_socket.bind((args.listen_ip, args.control_port))
     print(f"🔧 Control interface listening on {args.listen_ip}:{args.control_port}")
+
+    # Start delayed packet handler thread
+    threading.Thread(target=process_delayed_packets, daemon=True).start()
 
     threading.Thread(target=udp_proxy, args=(proxy_socket, args.target_ip, args.target_port), daemon=True).start()
     threading.Thread(target=handle_control, args=(control_socket, proxy_config), daemon=True).start()
