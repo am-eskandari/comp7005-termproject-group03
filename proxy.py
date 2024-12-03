@@ -1,4 +1,3 @@
-import argparse
 import random
 import socket
 import threading
@@ -7,7 +6,7 @@ from datetime import datetime
 
 from utils.controller import handle_control
 from utils.logger import proxy_logger, log_event
-from utils.validation import validate_ip, validate_port, validate_chance, validate_delay_time
+from utils.parsing import parse_proxy
 
 # Shared proxy configuration
 proxy_config = {
@@ -40,41 +39,6 @@ def clear_expired_cache():
         time.sleep(CACHE_TIMEOUT)
         dedup_cache["client_to_server"].clear()
         dedup_cache["server_to_client"].clear()
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="UDP Proxy Server with Logging and Delay Ranges")
-    parser.add_argument('--listen-ip', required=True, help="Proxy server IP address")
-    parser.add_argument('--listen-port', required=True, help="Proxy server port")
-    parser.add_argument('--target-ip', required=True, help="Target server IP address")
-    parser.add_argument('--target-port', required=True, help="Target server port")
-    parser.add_argument('--client-drop', required=True, help="Drop chance (0.0 to 1.0) for client-to-server")
-    parser.add_argument('--server-drop', required=True, help="Drop chance (0.0 to 1.0) for server-to-client")
-    parser.add_argument('--client-delay', required=True, help="Delay chance (0.0 to 1.0) for client-to-server")
-    parser.add_argument('--server-delay', required=True, help="Delay chance (0.0 to 1.0) for server-to-client")
-    parser.add_argument('--client-delay-time', required=True,
-                        help="Delay time for client-to-server (e.g., '100' or '100-500')")
-    parser.add_argument('--server-delay-time', required=True,
-                        help="Delay time for server-to-client (e.g., '100' or '100-500')")
-    parser.add_argument('--control-port', required=True, help="Control port for dynamic configuration updates")
-    args = parser.parse_args()
-
-    # Validate arguments using validation functions
-    args.listen_ip = validate_ip(args.listen_ip)
-    args.listen_port = validate_port(args.listen_port)
-    args.target_ip = validate_ip(args.target_ip)
-    args.target_port = validate_port(args.target_port)
-    args.control_port = validate_port(args.control_port)
-
-    args.client_drop = validate_chance(args.client_drop)
-    args.server_drop = validate_chance(args.server_drop)
-    args.client_delay = validate_chance(args.client_delay)
-    args.server_delay = validate_chance(args.server_delay)
-
-    args.client_delay_time = validate_delay_time(args.client_delay_time)
-    args.server_delay_time = validate_delay_time(args.server_delay_time)
-
-    return args
 
 
 ack_tracking_cache = {}  # Tracks ACK packets for potential retries
@@ -231,7 +195,7 @@ def udp_proxy(proxy_socket, server_ip, server_port):
 
 
 def main():
-    args = parse_arguments()
+    args = parse_proxy()
 
     # Proxy configuration initialization
     proxy_config["client-drop"] = args.client_drop

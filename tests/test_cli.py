@@ -3,9 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
-from client import parse_arguments as parse_client_arguments
-from proxy import parse_arguments as parse_proxy_arguments
-from server import parse_arguments as parse_server_arguments
+from client import parse_client as parse_client_arguments
+from proxy import parse_proxy as parse_proxy_arguments
+from server import parse_server as parse_server_arguments
 
 
 # Common helper function for argument validation

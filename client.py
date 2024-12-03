@@ -1,37 +1,8 @@
-import argparse
 import socket
 from datetime import datetime
 
 from utils.logger import client_logger, log_event
-from utils.validation import validate_ip, validate_port
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="UDP Client with Latency Tracking")
-    parser.add_argument('--target-ip', required=True, help="Server IP address")
-    parser.add_argument('--target-port', required=True, help="Server port")
-    parser.add_argument('--timeout', required=True, help="Acknowledgment timeout in milliseconds")
-    args = parser.parse_args()
-
-    # Validate and process IP
-    args.target_ip = validate_ip(args.target_ip)
-
-    # Validate and process port
-    args.target_port = validate_port(args.target_port)
-
-    # Validate and process timeout
-    try:
-        timeout_ms = int(args.timeout)
-        if timeout_ms <= 0:
-            raise ValueError("Timeout must be a positive integer.")
-    except ValueError as e:
-        print(f"❌ Invalid timeout value: {args.timeout}. {e}")
-        print("Timeout must be a positive integer in milliseconds.")
-        exit(1)
-
-    # Convert timeout to seconds for socket operations
-    args.timeout = timeout_ms / 1000.0
-    return args
+from utils.parsing import parse_client
 
 
 def udp_client(server_ip, server_port, timeout=2):
@@ -165,5 +136,5 @@ def udp_client(server_ip, server_port, timeout=2):
 
 
 if __name__ == "__main__":
-    parsed_args = parse_arguments()
+    parsed_args = parse_client()
     udp_client(parsed_args.target_ip, parsed_args.target_port, parsed_args.timeout)

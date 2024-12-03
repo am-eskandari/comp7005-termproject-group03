@@ -1,9 +1,8 @@
-import argparse
 import socket
 from datetime import datetime
 
 from utils.logger import server_logger, log_event
-from utils.validation import validate_ip, validate_port
+from utils.parsing import parse_server
 
 # Cache for deduplication and acknowledgment
 dedup_cache = set()
@@ -18,21 +17,6 @@ def cleanup_cache():
                     (now - timestamp).total_seconds() > CACHE_TIMEOUT]
     for key in expired_keys:
         del acknowledgment_cache[key]
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="UDP Server with Latency Tracking")
-    parser.add_argument('--listen-ip', required=True, help="IP address to bind")
-    parser.add_argument('--listen-port', required=True, help="Port to listen on")
-    arguments = parser.parse_args()
-
-    # Validate and process IP
-    arguments.listen_ip = validate_ip(arguments.listen_ip)
-
-    # Validate and process port
-    arguments.listen_port = validate_port(arguments.listen_port)
-
-    return arguments
 
 
 def udp_server(listen_ip, listen_port):
@@ -154,5 +138,5 @@ def udp_server(listen_ip, listen_port):
 
 
 if __name__ == "__main__":
-    parsed_args = parse_arguments()
+    parsed_args = parse_server()
     udp_server(parsed_args.listen_ip, parsed_args.listen_port)
