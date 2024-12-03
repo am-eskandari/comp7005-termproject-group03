@@ -5,8 +5,8 @@ import threading
 import time
 from datetime import datetime
 
+from utils.controller import handle_control
 from utils.logger import proxy_logger, log_event
-from utils.utils import handle_control
 from utils.validation import validate_ip, validate_port, validate_chance, validate_delay_time
 
 # Shared proxy configuration
