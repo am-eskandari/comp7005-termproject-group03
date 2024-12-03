@@ -45,6 +45,7 @@ def udp_server(listen_ip, listen_port):
     # Initialize sequence tracking
     expected_sequence_number = 1  # Tracks the next expected sequence number
     processed_sequences = set()  # Set to track processed sequence numbers for deduplication
+    acknowledged_sequences = set()  # Set to suppress duplicate acknowledgments
 
     # Dictionary to store packet receive times for latency calculation
     packet_timestamps = {}
@@ -93,13 +94,6 @@ def udp_server(listen_ip, listen_port):
             sequence_number, message = decoded_data.split(":", 1)
             sequence_number = int(sequence_number)
 
-            # Check if the packet is a retransmission
-            if sequence_number in acknowledgment_cache:
-                ack_message, timestamp = acknowledgment_cache[sequence_number]
-                server_socket.sendto(ack_message.encode(), addr)
-                print(f"📤 Resent acknowledgment: {ack_message} for SEQ {sequence_number}")
-                continue
-
             # Deduplication logic: Ignore packets already processed
             if sequence_number in processed_sequences:
                 print(f"🔄 Duplicate packet [SEQ {sequence_number}] from {addr}. Ignored.")
@@ -109,6 +103,11 @@ def udp_server(listen_ip, listen_port):
 
             # Add sequence number to the processed set
             processed_sequences.add(sequence_number)
+
+            # Suppress duplicate ACKs
+            if sequence_number in acknowledged_sequences:
+                print(f"📤 Duplicate acknowledgment suppressed: ACK:{sequence_number}")
+                continue
 
             # Store the receive timestamp for the sequence number
             packet_timestamps[sequence_number] = receive_time
@@ -133,6 +132,9 @@ def udp_server(listen_ip, listen_port):
             ack_message = f"ACK:{sequence_number}"
             acknowledgment_cache[sequence_number] = (ack_message, datetime.now())
             server_socket.sendto(ack_message.encode(), addr)
+
+            # Add the sequence number to the acknowledged set
+            acknowledged_sequences.add(sequence_number)
 
             # Calculate total latency based on the stored timestamp
             if sequence_number in packet_timestamps:
