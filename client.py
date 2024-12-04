@@ -11,7 +11,6 @@ def udp_client(server_ip, server_port, timeout=2):
     client_socket.settimeout(timeout)
 
     sequence_number = 1  # Tracks the sequence number for each message
-    auto_send_count = 4  # Number of additional messages to auto-send
 
     # Dictionary to store the send timestamp for each sequence
     send_timestamps = {}
@@ -82,32 +81,6 @@ def udp_client(server_ip, server_port, timeout=2):
 
                 # Retry sending the next message if this one fails
                 break
-
-            # Automatically send additional messages
-            for i in range(auto_send_count):
-                auto_message = f"hello there {i + 2}"
-                message_with_seq = f"{sequence_number}:{auto_message}"
-                send_timestamps[sequence_number] = datetime.now()  # Track timestamp for auto-send messages
-                for attempt in range(5):
-                    try:
-                        client_socket.sendto(message_with_seq.encode(), (server_ip, server_port))
-                        print(f"✅ [SEQ {sequence_number}] Sent: '{auto_message}'")
-
-                        # Wait for acknowledgment
-                        data, addr = client_socket.recvfrom(1024)
-                        ack_message = data.decode()
-                        if ack_message.startswith("ACK:"):
-                            ack = int(ack_message.split(":")[1])
-                            if ack == sequence_number:
-                                latency_ms = (datetime.now() - send_timestamps[ack]).total_seconds() * 1000
-                                print(f"📥 [ACK {ack}] Received for '{auto_message}' (Latency: {latency_ms:.2f} ms)\n")
-                                del send_timestamps[ack]  # Clean up timestamp
-                                sequence_number += 1
-                                break
-                    except socket.timeout:
-                        print(f"⏳ Timeout for '{auto_message}'! Retrying... (Attempt {attempt + 1})")
-                else:
-                    print(f"❌ Failed to send '{auto_message}' after 5 attempts.")
 
     except KeyboardInterrupt:
         print("\n👋 Exiting client. Sending termination message to server...")
