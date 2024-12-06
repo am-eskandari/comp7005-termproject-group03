@@ -85,7 +85,7 @@ def udp_client(server_ip, server_port, timeout=2):
 
             # Automatically send additional messages
             for i in range(auto_send_count):
-                auto_message = f"hello there {i + 2}"
+                auto_message = f"hi {i + 2}"
                 message_with_seq = f"{sequence_number}:{auto_message}"
                 send_timestamps[sequence_number] = datetime.now()  # Track timestamp for auto-send messages
                 for attempt in range(5):
