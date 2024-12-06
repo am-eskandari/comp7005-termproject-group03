@@ -57,30 +57,26 @@ def udp_client(server_ip, server_port, timeout=2):
                         # Parse acknowledgment (expecting "ACK:<sequence>")
                         if ack_message.startswith("ACK:"):
                             ack = int(ack_message.split(":")[1])
-                        else:
-                            raise ValueError(f"Unexpected acknowledgment format: {ack_message}")
+                            if ack == sequence_number:
+                                latency_ms = (datetime.now() - send_timestamps[sequence_number]).total_seconds() * 1000
+                                print(f"📥 [ACK {ack}] Received from {addr} (Latency: {latency_ms:.2f} ms)\n")
 
-                        # Check if the acknowledgment corresponds to the sent sequence number
-                        if ack == sequence_number:
-                            latency_ms = (datetime.now() - send_timestamps[sequence_number]).total_seconds() * 1000
-                            print(f"📥 [ACK {ack}] Received from {addr} (Latency: {latency_ms:.2f} ms)\n")
-
-                            # Clean up the timestamp for the acknowledged sequence number
-                            del send_timestamps[sequence_number]
-                            sequence_number += 1  # Increment for the next message
-                            break  # Exit the retry loop on successful acknowledgment
-                        else:
-                            print(f"⚠️ Unexpected ACK: {ack} (Expected: {sequence_number})")
+                                # Clean up the timestamp for the acknowledged sequence number
+                                del send_timestamps[sequence_number]
+                                sequence_number += 1  # Increment for the next message
+                                break  # Exit the retry loop on successful acknowledgment
+                            else:
+                                print(f"⚠️ Unexpected ACK: {ack} (Expected: {sequence_number})")
 
                     except socket.timeout:
                         print(f"⏳ Timeout! Retrying SEQ {sequence_number}... (Attempt {attempt + 1})")
+
                 else:
                     # If all attempts fail, log and move to the next message
                     print(f"❌ Failed to receive acknowledgment for SEQ {sequence_number} after 5 attempts.\n")
-                    sequence_number += 1  # Move to the next sequence
                     break  # Exit the loop for this message
 
-                # Retry sending the next message if this one fails
+                # Exit after retries if acknowledgment is not received
                 break
 
             # Automatically send additional messages
